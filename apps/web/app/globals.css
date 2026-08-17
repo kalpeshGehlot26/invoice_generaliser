@@ -11,6 +11,11 @@
    ========================================================================= */
 
 :root {
+  /* Tells the browser to render native scrollbars, form controls and
+     selection dark. Without it Chrome paints a light page scrollbar that
+     fights everything else. */
+  color-scheme: dark;
+
   --ink:        #0c0b0a;
   --ink-raised: #16130f;
   --ink-sunk:   #090807;
@@ -34,6 +39,27 @@
   --step: 8px;
   --radius: 2px;
 }
+
+/* ---------------------------------------------------------------- scrollbars
+   A visible scroll gutter is part of the composition, not an accident. Thin,
+   inset, and the same ink as the rules. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover { background: var(--bone-faint); background-clip: content-box; }
+*::-webkit-scrollbar-corner { background: transparent; }
 
 *,
 *::before,
@@ -116,7 +142,7 @@ h1, h2, h3, .display {
   margin: 0 auto;
   padding: calc(var(--step) * 4) calc(var(--step) * 5) calc(var(--step) * 10);
   display: grid;
-  grid-template-columns: 368px minmax(0, 1fr);
+  grid-template-columns: 404px minmax(0, 1fr);
   gap: calc(var(--step) * 5);
   align-items: start;
 }
@@ -129,32 +155,45 @@ h1, h2, h3, .display {
   .panel { position: static !important; max-height: none !important; }
 }
 
+/* The panel is a fixed-height column: upload at the head, action at the foot,
+   and only the middle scrolls. Scrolling the whole panel meant the upload block
+   and the primary action slid away, and produced a second full-height
+   scrollbar next to the page's. */
 .panel {
   position: sticky;
   top: calc(var(--step) * 3);
   border: 1px solid var(--rule);
   background: var(--ink-raised);
-  /* Keeps the panel inside the viewport instead of running 1400px down the
-     page: the field list scrolls within itself.
-     The 150px subtracted is the masthead plus page padding — without it the
-     panel overflows on first paint and clips the primary action below the fold,
-     before the sticky offset has anything to pin against. */
+  /* 150px is the masthead plus page padding. Without it the panel overflows on
+     first paint and clips the primary action below the fold, before the sticky
+     offset has anything to pin against. */
   max-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-section {
+  padding: calc(var(--step) * 2.5) calc(var(--step) * 3);
+  border-bottom: 1px solid var(--rule-soft);
+  flex-shrink: 0;
+}
+
+/* The one region that scrolls. */
+.panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-.panel-section {
-  padding: calc(var(--step) * 2.5);
-  border-bottom: 1px solid var(--rule-soft);
-}
+.panel-scroll > .panel-section:last-child { border-bottom: 0; }
 
-.panel-section:last-child {
-  border-bottom: 0;
-  position: sticky;
-  bottom: 0;
-  background: var(--ink-raised);
+.panel-foot {
+  flex-shrink: 0;
+  padding: calc(var(--step) * 2.5) calc(var(--step) * 3);
   border-top: 1px solid var(--rule);
+  background: var(--ink-sunk);
 }
 
 .legend {
@@ -164,7 +203,8 @@ h1, h2, h3, .display {
   text-transform: uppercase;
   letter-spacing: 0.13em;
   color: var(--bone-dim);
-  margin-bottom: calc(var(--step) * 1.5);
+  margin-bottom: calc(var(--step) * 1.75);
+  line-height: 1.5;
 }
 
 /* ------------------------------------------------------------------ upload */
@@ -172,7 +212,9 @@ h1, h2, h3, .display {
   border: 1px dashed var(--rule);
   background: var(--ink-sunk);
   color: var(--bone-dim);
-  padding: calc(var(--step) * 4) calc(var(--step) * 2);
+  /* Deliberately compact: every pixel here comes off the field list, which is
+     the region that actually needs the room. */
+  padding: calc(var(--step) * 3) calc(var(--step) * 2);
   text-align: center;
   cursor: pointer;
   width: 100%;
@@ -195,7 +237,11 @@ h1, h2, h3, .display {
   border-color: var(--bone-faint);
   color: var(--bone);
   text-align: left;
+  padding: calc(var(--step) * 2.5);
 }
+
+/* The centring below is for the empty state's helper line only. */
+.drop.has-file .filemeta { margin-left: 0; margin-right: 0; max-width: none; }
 
 .drop .filename {
   display: block;
@@ -207,9 +253,12 @@ h1, h2, h3, .display {
 .drop .filemeta {
   display: block;
   color: var(--bone-faint);
-  font-size: 12.5px;
-  margin-top: 5px;
-  line-height: 1.45;
+  font-size: 13px;
+  margin-top: 7px;
+  line-height: 1.6;
+  max-width: 34ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ------------------------------------------------------------------ presets */
@@ -221,7 +270,7 @@ h1, h2, h3, .display {
 
 .preset {
   flex: 1;
-  padding: 6px 4px;
+  padding: 8px 4px;
   background: transparent;
   border: 1px solid var(--rule);
   color: var(--bone-dim);
@@ -250,11 +299,11 @@ details.group > summary {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 0;
+  padding: 12px 0;
   cursor: pointer;
   list-style: none;
   color: var(--bone);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
 }
 
@@ -279,17 +328,17 @@ details.group[open] > summary::before { content: "\2212"; }
 
 .group-count.active { color: var(--fund); }
 
-.group-body { padding: 2px 0 10px 20px; }
+.group-body { padding: 2px 0 12px 22px; }
 
 .check {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 6px 0;
+  padding: 8px 0;
   cursor: pointer;
   color: var(--bone-dim);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 14.5px;
+  line-height: 1.55;
   transition: color 120ms ease;
 }
 
@@ -343,10 +392,10 @@ textarea.other::placeholder { color: var(--bone-faint); }
 
 .hint {
   color: var(--bone-dim);
-  font-size: 13.5px;
-  line-height: 1.55;
-  margin: 0 0 12px;
-  max-width: 46ch;
+  font-size: 14.5px;
+  line-height: 1.72;
+  margin: 0 0 16px;
+  max-width: 50ch;
 }
 
 .hint.after { margin: 8px 0 0; }

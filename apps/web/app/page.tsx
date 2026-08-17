@@ -119,6 +119,7 @@ export default function Page() {
           </button>
         </div>
 
+        <div className="panel-scroll">
         <div className="panel-section">
           <div className="legend">
             Fields you require &nbsp;&middot;&nbsp; {ticked.size} of {ALL_KEYS.length}
@@ -177,8 +178,9 @@ export default function Page() {
           />
           <p className="hint after">Anything not in the list above. Plain English is fine.</p>
         </div>
+        </div>
 
-        <div className="panel-section">
+        <div className="panel-foot">
           <button className="go" onClick={submit} disabled={!file || busy}>
             {busy ? <span className="working">Reading document&hellip;</span> : "Process invoice"}
           </button>
