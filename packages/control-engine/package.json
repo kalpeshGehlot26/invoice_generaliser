@@ -5,7 +5,8 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./route": "./src/route.ts"
+    "./route": "./src/route.ts",
+    "./coverage": "./src/coverage.ts"
   },
   "scripts": {
     "test": "vitest run",

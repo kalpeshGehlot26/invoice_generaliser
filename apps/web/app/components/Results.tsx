@@ -2,6 +2,7 @@
 
 import type { ControlResult, Finding, Invoice } from "@ifg/control-engine";
 import { SEVERITY_WEIGHT } from "@ifg/control-engine/route";
+import { isCovered, reasonFor } from "@ifg/control-engine/coverage";
 import { getFieldByKey } from "@invoice/extract/fields";
 
 export interface ProcessResponse {
@@ -180,19 +181,54 @@ function riskFor(risk: Map<string, FieldRisk>, path: string | undefined): FieldR
   return total;
 }
 
-function Score({ risk }: { risk: FieldRisk | null }) {
-  // A clean field shows a dash rather than a zero: zero risk and "no control
-  // looked at this field" are different states, and only the reviewer can tell
-  // which matters. The dash keeps the column aligned without asserting either.
-  if (!risk) return <span className="score-nil" aria-hidden="true">&mdash;</span>;
+/**
+ * Every field gets a number. Three states, because a clean field is clean for
+ * one of two very different reasons:
+ *
+ *   points > 0     a control objected — points, in its severity colour
+ *   0 · checked    a control examined it and was satisfied
+ *   0 · unchecked  no control examines this field at all
+ *
+ * The last one matters most. Printing a plain 0 there would report
+ * `seller.address` as verified when nothing has ever looked at it — the same
+ * quiet false assurance as a confident read of an unreadable page.
+ */
+function Score({ risk, path }: { risk: FieldRisk | null; path?: string }) {
+  if (risk) {
+    const colour = SEVERITY_COLOUR[risk.severity];
+    // Two findings on one field would make a run-on label, so name the worst
+    // and count the rest.
+    const codes = [...new Set(risk.codes)];
+    const reason =
+      codes.length === 1 ? reasonFor(codes[0]!) : `${reasonFor(codes[0]!)} +${codes.length - 1} more`;
+
+    return (
+      <span className="score" title={`${risk.points} risk points — ${codes.join(", ")}`}>
+        <span className="score-why" style={{ color: colour }}>
+          {reason}
+        </span>
+        <span className="score-chip" style={{ color: colour, borderColor: colour, background: "var(--surface)" }}>
+          {risk.points}
+        </span>
+      </span>
+    );
+  }
+
+  const covered = path !== undefined && isCovered(path);
 
   return (
     <span
-      className="score-chip"
-      style={{ color: SEVERITY_COLOUR[risk.severity], borderColor: SEVERITY_COLOUR[risk.severity] }}
-      title={`${risk.points} risk points from ${risk.codes.join(", ")}`}
+      className="score"
+      title={
+        covered
+          ? "Examined by the controls, nothing flagged."
+          : "No control examines this field, so a clean result here is not a verified one."
+      }
     >
-      {risk.points}
+      <span className={`score-why ${covered ? "is-clean" : "is-uncovered"}`}>
+        {covered ? "checked" : "not checked"}
+      </span>
+      <span className={`score-chip ${covered ? "is-clean" : "is-uncovered"}`}>0</span>
     </span>
   );
 }
@@ -237,7 +273,7 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
                 <Cell value={value} />
               </td>
               <td className="score-cell">
-                <Score risk={riskFor(risk, path)} />
+                <Score risk={riskFor(risk, path)} path={path} />
               </td>
             </tr>
           ))}
@@ -262,7 +298,7 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
                     {money(li.line_total) ?? "?"}
                   </td>
                   <td className="score-cell">
-                    <Score risk={riskFor(risk, `line[${i + 1}]`)} />
+                    <Score risk={riskFor(risk, `line[${i + 1}]`)} path={`line[${i + 1}]`} />
                   </td>
                 </tr>
               ))}
@@ -346,7 +382,7 @@ export default function Results({ data }: { data: ProcessResponse }) {
                 {r.value !== null && <StructuredValue value={r.value} />}
                 {r.reason !== null && <div className="why">{r.reason}</div>}
               </span>
-              <Score risk={riskFor(risk, getFieldByKey(r.key)?.path)} />
+              <Score risk={riskFor(risk, getFieldByKey(r.key)?.path)} path={getFieldByKey(r.key)?.path} />
             </div>
           ))}
         </div>

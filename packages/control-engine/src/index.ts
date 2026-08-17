@@ -3,6 +3,7 @@ export * from "./reference.js";
 export * from "./tiers.js";
 export * from "./util.js";
 export * from "./route.js";
+export * from "./coverage.js";
 export * from "./engine.js";
 export { vLineArithmetic, vTotals } from "./controls/arithmetic.js";
 export { vTax, vCurrency } from "./controls/tax.js";
