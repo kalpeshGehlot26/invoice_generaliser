@@ -859,3 +859,178 @@ pre.json {
    the status pill has. */
 .req > .score-chip,
 .req > .score-nil { margin-right: calc(var(--step) * 1.25); flex: none; }
+
+/* ------------------------------------------------------- structured values
+   `line_items` reaches the requested list as a stringified array, because that
+   list is a flat key/value contract. Printed raw it was one unbroken ~900
+   character line that no wrapping could rescue: it pushed the whole page into
+   horizontal scroll and buried the figures. Parsed into a table it reads. */
+.req-body { flex: 1 1 auto; min-width: 0; }
+
+.req .val {
+  /* A long identifier or address must break rather than widen the page. */
+  overflow-wrap: anywhere;
+}
+
+.val .rows {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.val .rows td {
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+  color: var(--text-2);
+}
+
+.val .rows tr:last-child td { border-bottom: 0; }
+.val .rows-seq   { width: 22px; color: var(--text-3); }
+.val .rows-desc  { overflow-wrap: anywhere; white-space: pre-line; }
+.val .rows-num   { width: 88px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.val .rows-total { color: var(--navy-deep); font-weight: 500; }
+.val.nil { color: var(--text-3); font-style: italic; }
+
+/* Nothing in the results column may widen the page. Wide tables and code
+   scroll inside their own box; the body never scrolls sideways. */
+html, body { overflow-x: hidden; }
+.data { table-layout: auto; width: 100%; }
+.data td { overflow-wrap: anywhere; }
+
+/* The score sits at the end of a row now, pushed there rather than ordered
+   there, so a long value cannot shove it out of alignment. */
+.req > .score-chip,
+.req > .score-nil { margin-left: auto; margin-right: 0; flex: none; align-self: flex-start; }
+.score-cell { text-align: right; }
+
+/* ----------------------------------------------------------------- scanning
+   A page being read, rather than a spinner. The bar sweeps, the ruled lines
+   light up as it passes, and the three stages below name what is actually
+   happening — rasterise, extract, control — so the wait is legible. */
+.scanning { text-align: center; }
+
+.scan {
+  display: flex;
+  justify-content: center;
+  margin-bottom: calc(var(--step) * 4);
+}
+
+.scan-page {
+  position: relative;
+  width: 250px;
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  animation: page-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.scan-line {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--rule-soft);
+  display: block;
+  /* Each line brightens as the bar reaches it. The stagger below is what makes
+     the sweep read as reading rather than as decoration. */
+  animation: line-read 2.1s ease-in-out infinite;
+}
+
+.scan-line.head   { height: 11px; background: var(--sky); }
+.scan-line.rule   { height: 2px; background: var(--rule); border-radius: 0; }
+.scan-line.grow   { flex: 1 1 auto; }
+.scan-line.money  { width: 54px; flex: none; }
+.w-100 { width: 100%; } .w-90 { width: 90%; } .w-80 { width: 80%; }
+.w-70  { width: 70%; }  .w-60 { width: 60%; } .w-45 { width: 45%; }
+.w-40  { width: 40%; }  .w-25 { width: 25%; }
+
+.scan-cols { display: flex; gap: 14px; margin: 4px 0; }
+.scan-cols > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.scan-row { display: flex; align-items: center; gap: 10px; }
+.scan-row.total .money { background: var(--brand-wash); }
+
+/* Stagger every line down the page so the highlight tracks the bar. */
+.scan-page > *:nth-child(1) .scan-line, .scan-page > .scan-line:nth-child(1) { animation-delay: 0ms; }
+.scan-page > *:nth-child(2) .scan-line, .scan-page > .scan-line:nth-child(2) { animation-delay: 120ms; }
+.scan-page > *:nth-child(3) .scan-line, .scan-page > .scan-line:nth-child(3) { animation-delay: 240ms; }
+.scan-page > *:nth-child(4) .scan-line, .scan-page > .scan-line:nth-child(4) { animation-delay: 360ms; }
+.scan-page > *:nth-child(5) .scan-line, .scan-page > .scan-line:nth-child(5) { animation-delay: 480ms; }
+.scan-page > *:nth-child(6) .scan-line, .scan-page > .scan-line:nth-child(6) { animation-delay: 600ms; }
+.scan-page > *:nth-child(7) .scan-line, .scan-page > .scan-line:nth-child(7) { animation-delay: 720ms; }
+.scan-page > *:nth-child(8) .scan-line, .scan-page > .scan-line:nth-child(8) { animation-delay: 840ms; }
+.scan-page > *:nth-child(9) .scan-line, .scan-page > .scan-line:nth-child(9) { animation-delay: 960ms; }
+.scan-page > *:nth-child(10) .scan-line, .scan-page > .scan-line:nth-child(10) { animation-delay: 1080ms; }
+
+/* The bar itself: a brand-orange edge with light bleeding off it. */
+.scan-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 34px;
+  top: -34px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(241, 106, 34, 0.06) 55%,
+    rgba(241, 106, 34, 0.16) 88%,
+    var(--brand) 100%
+  );
+  box-shadow: 0 0 14px 2px rgba(241, 106, 34, 0.35);
+  animation: sweep 2.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes sweep {
+  0%        { transform: translateY(0); opacity: 0; }
+  8%        { opacity: 1; }
+  92%       { opacity: 1; }
+  100%      { transform: translateY(calc(100% + 34px)); opacity: 0; }
+}
+
+@keyframes line-read {
+  0%, 100% { background: var(--rule-soft); }
+  46%      { background: var(--rule-soft); }
+  56%      { background: var(--sky); }
+  70%      { background: var(--rule-soft); }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The stages, cycling in step with the sweep so the label matches the motion. */
+.stages {
+  list-style: none;
+  margin: calc(var(--step) * 2) 0 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--step) * 3);
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.stages li { animation: stage 3.6s ease-in-out infinite; }
+.stages li:nth-child(1) { animation-delay: 0s; }
+.stages li:nth-child(2) { animation-delay: 1.2s; }
+.stages li:nth-child(3) { animation-delay: 2.4s; }
+
+@keyframes stage {
+  0%, 100% { color: var(--text-3); }
+  20%      { color: var(--brand-deep); }
+  40%      { color: var(--text-3); }
+}
+
+/* Motion is decoration here; the text alone carries the meaning. */
+@media (prefers-reduced-motion: reduce) {
+  .scan-bar, .scan-line, .scan-page, .stages li, .working { animation: none; }
+  .scan-bar { display: none; }
+}

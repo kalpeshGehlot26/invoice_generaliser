@@ -234,9 +234,47 @@ export default function Page() {
         )}
 
         {busy && (
-          <div className="empty">
+          <div className="empty scanning">
+            {/* A stand-in page with ruled lines and a money column, swept by a
+                scan bar. Built from divs rather than an SVG or a GIF so it
+                inherits the theme tokens and costs nothing to ship. */}
+            <div className="scan" role="img" aria-label="Reading the document">
+              <div className="scan-page">
+                <span className="scan-line w-40 head" />
+                <span className="scan-line w-25" />
+                <div className="scan-cols">
+                  <div>
+                    <span className="scan-line w-90" />
+                    <span className="scan-line w-70" />
+                    <span className="scan-line w-80" />
+                  </div>
+                  <div>
+                    <span className="scan-line w-60" />
+                    <span className="scan-line w-45" />
+                  </div>
+                </div>
+                <span className="scan-line w-100 rule" />
+                {[0, 1, 2, 3].map((i) => (
+                  <div className="scan-row" key={i}>
+                    <span className="scan-line grow" />
+                    <span className="scan-line money" />
+                  </div>
+                ))}
+                <span className="scan-line w-100 rule" />
+                <div className="scan-row total">
+                  <span className="scan-line grow" />
+                  <span className="scan-line money" />
+                </div>
+                <span className="scan-bar" />
+              </div>
+            </div>
+
             <div className="display working">Reading document</div>
-            <p>Rasterising pages, extracting fields, running controls. This takes a few seconds.</p>
+            <ol className="stages">
+              <li>Rasterising pages</li>
+              <li>Extracting fields</li>
+              <li>Running 34 controls</li>
+            </ol>
           </div>
         )}
 

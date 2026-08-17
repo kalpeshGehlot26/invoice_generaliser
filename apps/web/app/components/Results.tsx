@@ -232,12 +232,12 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
         <tbody>
           {rows.map(([label, value, path]) => (
             <tr key={label}>
-              <td className="score-cell">
-                <Score risk={riskFor(risk, path)} />
-              </td>
               <td>{label}</td>
               <td>
                 <Cell value={value} />
+              </td>
+              <td className="score-cell">
+                <Score risk={riskFor(risk, path)} />
               </td>
             </tr>
           ))}
@@ -254,15 +254,15 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
             <tbody>
               {invoice.line_items!.map((li, i) => (
                 <tr key={i}>
-                  <td className="score-cell">
-                    <Score risk={riskFor(risk, `line[${i + 1}]`)} />
-                  </td>
                   <td>
                     <Cell value={li.description} />
                   </td>
                   <td>
                     {li.qty ?? "?"} &times; {money(li.unit_price) ?? "?"} ={" "}
                     {money(li.line_total) ?? "?"}
+                  </td>
+                  <td className="score-cell">
+                    <Score risk={riskFor(risk, `line[${i + 1}]`)} />
                   </td>
                 </tr>
               ))}
@@ -271,6 +271,57 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
         </div>
       )}
     </>
+  );
+}
+
+
+/**
+ * Render a requested value that is really a structure.
+ *
+ * `line_items` arrives as a stringified array because the requested list is a
+ * flat key/value contract. Printed raw it was a single unbroken 900-character
+ * line, which no amount of wrapping helps: it forced the whole page to scroll
+ * sideways and buried the figures a reviewer came for. Parsed, it is a table.
+ *
+ * Falls back to wrapped text whenever the value is not an array of objects, so
+ * a custom free-text field is never mangled by a failed parse.
+ */
+function StructuredValue({ value }: { value: string }) {
+  let rows: Record<string, unknown>[] | null = null;
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed) && parsed.every((r) => r && typeof r === "object")) {
+      rows = parsed as Record<string, unknown>[];
+    }
+  } catch {
+    // Not JSON. Plain text below.
+  }
+
+  if (rows === null) return <div className="val">{value}</div>;
+  if (rows.length === 0) return <div className="val nil">no rows</div>;
+
+  const cell = (v: unknown) =>
+    v === null || v === undefined || v === "" ? "—" : String(v);
+
+  return (
+    <div className="val">
+      <table className="rows">
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              <td className="rows-seq">{cell(r.seq ?? i + 1)}</td>
+              <td className="rows-desc">{cell(r.description)}</td>
+              <td className="rows-num">
+                {cell(r.qty)}
+                {r.uom ? ` ${r.uom}` : ""}
+              </td>
+              <td className="rows-num">{cell(r.unit_price)}</td>
+              <td className="rows-num rows-total">{cell(r.line_total)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -288,14 +339,14 @@ export default function Results({ data }: { data: ProcessResponse }) {
           </div>
           {requested.map((r) => (
             <div key={r.key} className={`req ${r.status}`}>
-              <Score risk={riskFor(risk, getFieldByKey(r.key)?.path)} />
               <span className="status">{r.status.replace("_", " ")}</span>
-              <span>
+              <span className="req-body">
                 <span className="key">{r.key}</span>
                 {r.source === "custom" && <span className="sev">custom</span>}
-                {r.value !== null && <div className="val">{r.value}</div>}
+                {r.value !== null && <StructuredValue value={r.value} />}
                 {r.reason !== null && <div className="why">{r.reason}</div>}
               </span>
+              <Score risk={riskFor(risk, getFieldByKey(r.key)?.path)} />
             </div>
           ))}
         </div>
