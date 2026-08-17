@@ -41,6 +41,12 @@ contains words like "assumed", "defaulted", "implied" or "not stated", the statu
 must be "not_found" and the value must be null. "found" means you read it off the \
 page.
 
+1c. payment_terms_days comes only from stated terms ("Net 30", "Payable within 14 \
+days", "30 days from invoice date"). Do NOT compute it from the gap between the \
+issue date and the due date. That difference is checked against the stated terms \
+downstream, and deriving one from the other makes the check compare a number with \
+itself and always pass.
+
 2. Do not repair arithmetic. If the line items do not sum to the stated subtotal, \
 or subtotal plus tax does not equal the stated total, report all of them exactly as \
 printed. A mismatch is a signal the system is built to detect; silently fixing it \
@@ -64,11 +70,34 @@ copy the seller into the payee.
 6. Line items are billed goods or services only. Do not include subtotal, tax, \
 discount, freight or total rows as line items.
 
-6a. line_total is the row's own final total — the rightmost money column for that \
-row, after any per-line fee, surcharge, handling or discount column. Tables often \
-carry several money columns (for example Amount, Fee, Total). Read the row's total, \
-not its first column. Getting this wrong makes the line items fail to sum to the \
-subtotal, which reports a correct invoice as arithmetically broken.
+6a. line_total is the row's own final total exactly as printed — the rightmost \
+money column for that row. Tables often carry several money columns (for example \
+Amount, Fee, Total). Read the row's total, not its first column. Do not adjust it \
+to make it agree with qty x unit_price: some documents print this column net of \
+tax and others print it tax-inclusive, and both are recorded as they appear.
+
+6d. When a row prints its own discount or its own tax, put them in that row's \
+discount and tax_amount fields. A discount printed as a percentage ("-Discount \
+5%") is converted to an amount against qty x unit_price. Do NOT fold either of \
+them into unit_price, into charge, or into line_total. This is what lets a \
+discounted, tax-inclusive row be recognised as correct instead of reported as \
+broken arithmetic.
+
+6f. tax_rate on a row is the percentage PRINTED against that row. Never compute \
+it, never blend two levies into one figure. On a row showing IGST 12% and CESS 5%, \
+tax_rate is 12 — not 17. A blended rate is a number that appears nowhere on the \
+document, and it makes the row fail every arithmetic check that uses it.
+
+6g. tax_amount on a row is the tax that is actually included in that row's printed \
+total. Where a row shows several levies and the row total plainly covers only some \
+of them, record only those. Do not sum levies that the row total excludes: the \
+remaining ones still get counted, in tax_breakdown, which is where the invoice \
+totals them.
+
+6e. Shipping, freight, carriage or postage is counted ONCE. If it appears as a row \
+in the line-item table, keep it there and leave the header freight null. Only use \
+the header freight when the charge is stated outside the table. Reporting it in \
+both places overstates the invoice by that amount and fails the total check.
 
 6c. A dash, em-dash, blank cell or "N/A" in a quantity or price column means null, not 0. Lump-sum rows legitimately have no quantity.
 
@@ -77,11 +106,18 @@ quantity, qty is null. If it does not print a unit price, unit_price is null. \
 NEVER pick a qty and unit_price pair because they multiply out to the total — \
 inventing 10 x 1,000 to reach 10,000 is a fabrication, and worse than nulls \
 because it looks verified. When a row carries an extra money column (fee, \
-surcharge, handling, per-line discount), report line_total from the row's total \
-column and leave unit_price null.
+surcharge, handling, per-line discount), still read qty and unit_price from their \
+own columns and record the extra column in charge, discount or tax_amount as \
+appropriate.
 
 7. tax_rate is the single headline percentage (19 for 19%). If several rates apply, \
 give the one covering most of the value and leave per-line rates on each line item.
+
+7b. tax_breakdown must account for ALL of tax_amount. Give one entry per rate the \
+document shows, and a separate entry for any additional levy shown in its own \
+column or its own total — CESS in India, an environmental or excise line elsewhere \
+— using that levy's own rate and base. If the entries you write do not add up to \
+tax_amount, a levy has been missed: find it rather than adjusting tax_amount.
 
 7a. Populate vat_id ONLY from a number the document itself labels as a VAT, GST, USt-IdNr, ABN, GSTIN or tax registration number. The label is what qualifies it, not the shape of the digits. If the only registration number on the page is labelled "Registered in England and Wales No.", "Company No.", "Companies House", "HRB", "CIN" or similar, then vat_id is null: that is a company registration number, a different thing. Reporting it as a VAT ID raises a fraud-shaped alert on an ordinary invoice, and hides the more useful fact that no VAT number was shown at all.
 

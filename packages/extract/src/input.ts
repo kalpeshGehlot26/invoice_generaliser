@@ -1,5 +1,6 @@
 import { pdf } from "pdf-to-img";
-import { LimitExceededError, UnsupportedFileError } from "./errors.js";
+import { effectiveDpi, readDimensions } from "./dimensions.js";
+import { IllegibleInputError, LimitExceededError, UnsupportedFileError } from "./errors.js";
 
 export type FileType = "pdf" | "png" | "jpeg" | "webp" | "gif";
 
@@ -7,12 +8,22 @@ export interface InputLimits {
   maxBytes: number;
   maxPages: number;
   dpi: number;
+  /** Refuse an image whose long edge is below this. */
+  minLongEdge: number;
+  /** Warn below this, but proceed. */
+  advisoryLongEdge: number;
 }
 
 export const DEFAULT_LIMITS: InputLimits = {
   maxBytes: Number(process.env.INVOICE_MAX_UPLOAD_BYTES ?? 25 * 1024 * 1024),
   maxPages: Number(process.env.INVOICE_MAX_PDF_PAGES ?? 20),
   dpi: Number(process.env.INVOICE_RASTER_DPI ?? 150),
+  // Calibrated against real inputs: a 531px A4 thumbnail (~45 dpi) fabricated
+  // its dates and totals; 1123px (~96 dpi) and 1438px (~123 dpi) both extracted
+  // correctly. 700 sits well clear of the working cases and well above the
+  // failing one.
+  minLongEdge: Number(process.env.INVOICE_MIN_LONG_EDGE ?? 700),
+  advisoryLongEdge: Number(process.env.INVOICE_ADVISORY_LONG_EDGE ?? 1100),
 };
 
 export interface PreparedInput {
@@ -20,6 +31,8 @@ export interface PreparedInput {
   images: string[];
   pageCount: number;
   sourceType: "pdf" | "image";
+  /** Non-fatal input-quality notes, surfaced to the caller. */
+  warnings: string[];
 }
 
 const MIME: Record<Exclude<FileType, "pdf">, string> = {
@@ -71,11 +84,13 @@ export async function prepareInput(
   }
 
   if (type !== "pdf") {
+    const warnings = checkLegibility(bytes, type, limits);
     const base64 = Buffer.from(bytes).toString("base64");
     return {
       images: [`data:${MIME[type]};base64,${base64}`],
       pageCount: 1,
       sourceType: "image",
+      warnings,
     };
   }
 
@@ -91,5 +106,46 @@ export async function prepareInput(
     images.push(`data:image/png;base64,${page.toString("base64")}`);
   }
 
-  return { images, pageCount: images.length, sourceType: "pdf" };
+  // A PDF is rasterised here at a known density, so its legibility is ours to
+  // control rather than the caller's.
+  return { images, pageCount: images.length, sourceType: "pdf", warnings: [] };
+}
+
+/**
+ * Refuse an image too coarse to read; warn when it is merely marginal.
+ *
+ * Unknown dimensions produce a warning, never silent acceptance: a header we
+ * cannot parse is a reason for less confidence, not more.
+ */
+function checkLegibility(
+  bytes: Uint8Array,
+  type: Exclude<FileType, "pdf">,
+  limits: InputLimits,
+): string[] {
+  const dim = readDimensions(bytes, type);
+  if (dim === null) {
+    return ["Could not read the image dimensions, so legibility was not checked."];
+  }
+
+  const longEdge = Math.max(dim.width, dim.height);
+  const dpi = effectiveDpi(dim);
+
+  if (longEdge < limits.minLongEdge) {
+    throw new IllegibleInputError(
+      `Image is ${dim.width}x${dim.height} — about ${dpi} dpi for a page-sized ` +
+        `document, below the ${limits.minLongEdge}px minimum. Text at this size ` +
+        "cannot be read reliably, and a model given an unreadable page will " +
+        "return confident invented values rather than refuse. Supply a scan of " +
+        "at least 150 dpi.",
+    );
+  }
+
+  if (longEdge < limits.advisoryLongEdge) {
+    return [
+      `Image is ${dim.width}x${dim.height} — about ${dpi} dpi for a page-sized ` +
+        "document. Small text may be misread; treat individual figures with caution.",
+    ];
+  }
+
+  return [];
 }

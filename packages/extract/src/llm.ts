@@ -88,6 +88,17 @@ export class OpenRouterClient implements LlmClient {
       // Without this, OpenRouter may route to a provider that ignores
       // response_format and returns unconstrained prose.
       provider: { require_parameters: true },
+      // Reading an invoice has one right answer, so there is nothing for
+      // sampling to explore. Left at the provider default (1.0), the same
+      // document returned a quantity of 1 on one run and 0 on the next, and a
+      // line tax rate of 12% on one run and 17% on the next — each of which
+      // flips the arithmetic controls and therefore the funding decision.
+      // Determinism is a product requirement here, not a tuning preference.
+      temperature: 0,
+      top_p: 1,
+      // Honoured by some providers and ignored by others; harmless where
+      // ignored, and removes one more source of drift where it is not.
+      seed: 7,
       max_tokens: maxTokens,
       messages: messages as any,
       response_format: zodResponseFormat(ModelOutputSchema, "invoice_extraction"),

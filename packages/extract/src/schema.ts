@@ -73,7 +73,21 @@ export const LineItemSchema = z.object({
     "Per-line fee, surcharge, handling or freight shown as its own column on " +
       "this row, separate from unit price. Null when the row has no such column.",
   ),
-  line_total: nnum(),
+  discount: nnum().describe(
+    "Discount on THIS row as an amount, not a percentage. If the row prints " +
+      "'-Discount 5%', compute 5% of qty x unit_price and give the amount. " +
+      "Null when the row shows no discount.",
+  ),
+  tax_amount: nnum().describe(
+    "Tax charged on THIS row, when the row has its own tax column (GST, IGST, " +
+      "CESS, sales tax). Add the columns together if there are several. Null " +
+      "when tax appears only in the footer.",
+  ),
+  line_total: nnum().describe(
+    "The row's total exactly as printed. Do not adjust it, and do not compute " +
+      "it — some documents print this net of tax, others print it including " +
+      "tax, and both are recorded as printed.",
+  ),
   tax_rate: nnum().describe("Percentage, e.g. 19 for 19%"),
   tax_category: nstr().describe("EN 16931 code if shown: S, Z, E, AE, K, G, O"),
 });
@@ -93,7 +107,11 @@ export const ExtractedInvoiceSchema = z.object({
   payee: PayeeSchema,
   po_number: nstr(),
   delivery_note_ref: nstr().describe(
-    "Delivery note, despatch note or goods-received reference, if printed",
+    "The reference labelled 'Delivery Note', 'Despatch Note', 'DN' or 'GRN'. " +
+      "Transport references printed beside it are NOT this: a Waybill No, LR No " +
+      "(lorry receipt), AWB, Bill of Lading or Vehicle No identifies the " +
+      "carriage, not the goods-received document a three-way match needs. Null " +
+      "if no delivery note reference is printed.",
   ),
   line_items: z.array(LineItemSchema),
   tax_breakdown: z
@@ -107,7 +125,15 @@ export const ExtractedInvoiceSchema = z.object({
   tax_rate: nnum().describe("Single headline tax rate as a percentage"),
   tax_amount: nnum(),
   discount: nnum(),
-  freight: nnum(),
+  freight: nnum().describe(
+    "Shipping or carriage stated as its OWN header line, separate from the " +
+      "line-item table. Null if shipping appears as a row in the table — it " +
+      "must be counted once, not in both places.",
+  ),
+  rounding_adjustment: nnum().describe(
+    "The document's own rounding line ('Rounded off 0.10'), signed as printed: " +
+      "negative if it reduces the total. Null if absent.",
+  ),
   total_due: nnum(),
 });
 

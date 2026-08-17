@@ -70,6 +70,86 @@ export function sanitiseCharge(
   return charge;
 }
 
+/** Row descriptions that mean "this line *is* the shipping cost". */
+const SHIPPING_LINE = /\b(shipping|freight|carriage|postage|delivery|courier|transport)\b/i;
+
+/**
+ * A shipping cost belongs on the invoice once.
+ *
+ * Observed on an Indian GST invoice: "Shipping & Packaging 112.00" appeared as a
+ * line item *and* was copied into the header `freight`. The total control then
+ * computed subtotal + tax - discount + freight = 27,536.90 against a printed
+ * 27,425.00 and raised a critical TOTAL_MISMATCH — a BLOCK on an invoice that
+ * foots to the last paisa. The document was fine; the extraction counted the
+ * carriage twice.
+ *
+ * Dropped only when a shipping row genuinely exists and matches the header
+ * figure, so an invoice that states freight *outside* its line items keeps it.
+ */
+export function dedupeFreight(
+  freight: number | null | undefined,
+  lines: { description?: string | null; line_total?: number | null }[],
+): { freight: number | null; warning: string | null } {
+  if (freight === null || freight === undefined || freight === 0) {
+    return { freight: freight ?? null, warning: null };
+  }
+
+  const duplicate = lines.some(
+    (li) =>
+      typeof li.description === "string" &&
+      SHIPPING_LINE.test(li.description) &&
+      li.line_total !== null &&
+      li.line_total !== undefined &&
+      Math.abs(li.line_total - freight) < 0.01,
+  );
+
+  if (!duplicate) return { freight, warning: null };
+
+  return {
+    freight: null,
+    warning:
+      `Header freight of ${freight.toFixed(2)} matched a shipping line item of the ` +
+      "same amount and was dropped from the header to avoid counting the carriage " +
+      "twice. It remains in line_items.",
+  };
+}
+
+/**
+ * A row's tax column is tax, not a surcharge.
+ *
+ * Observed on the same invoice: the model put the row's IGST of 12.00 into
+ * `charge`. It happened to make that row reconcile, but for the wrong reason —
+ * and on the rows where tax was larger it would have inflated the net amount.
+ * Where the value matches the row's own stated tax rate, it is reclassified.
+ */
+export function splitChargeAndTax(li: {
+  qty?: number | null;
+  unit_price?: number | null;
+  charge?: number | null;
+  discount?: number | null;
+  tax_rate?: number | null;
+  tax_amount?: number | null;
+}): { charge: number | null; tax_amount: number | null } {
+  const charge = li.charge ?? null;
+  const taxAmount = li.tax_amount ?? null;
+
+  if (charge === null || charge === 0) return { charge: null, tax_amount: taxAmount };
+  if (li.tax_rate === null || li.tax_rate === undefined || li.tax_rate === 0) {
+    return { charge, tax_amount: taxAmount };
+  }
+  if (li.qty === null || li.qty === undefined || li.unit_price === null || li.unit_price === undefined) {
+    return { charge, tax_amount: taxAmount };
+  }
+
+  const base = li.qty * li.unit_price - (li.discount ?? 0);
+  const impliedTax = (base * li.tax_rate) / 100;
+  if (Math.abs(impliedTax - charge) >= 0.01) return { charge, tax_amount: taxAmount };
+
+  // It is the tax. Keep it as tax if that slot is free, otherwise discard the
+  // duplicate rather than let it be added to the row twice.
+  return { charge: null, tax_amount: taxAmount ?? charge };
+}
+
 /** Coerce absent-meaning text to a real null. Also trims. */
 export function cleanString(value: string | null | undefined): string | null {
   if (value === null || value === undefined) return null;
@@ -195,6 +275,12 @@ export interface EnrichContext {
   sourceChannel: string;
   master: VendorMaster;
   label?: string;
+  /**
+   * Collects notes about corrections made here. A deterministic repair must be
+   * visible: silently fixing an extraction is how a reviewer loses the ability
+   * to tell a clean document from a rescued one.
+   */
+  warnings?: string[];
 }
 
 /**
@@ -210,6 +296,33 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
   const payeeNamed = Boolean(
     cleanString(extracted.payee?.name) || cleanString(extracted.payee?.iban),
   );
+
+  const lineItems = extracted.line_items.map((li) => {
+    const { charge, tax_amount } = splitChargeAndTax({
+      qty: li.qty,
+      unit_price: li.unit_price,
+      charge: li.charge,
+      discount: li.discount,
+      tax_rate: li.tax_rate,
+      tax_amount: li.tax_amount,
+    });
+    return {
+      seq: li.seq,
+      description: cleanString(li.description),
+      qty: li.qty,
+      uom: cleanString(li.uom),
+      unit_price: li.unit_price,
+      charge: sanitiseCharge(charge, li.qty, li.unit_price, li.line_total),
+      discount: li.discount,
+      tax_amount,
+      line_total: li.line_total,
+      tax_rate: li.tax_rate,
+      tax_category: cleanString(li.tax_category),
+    };
+  });
+
+  const freight = dedupeFreight(extracted.freight, lineItems);
+  if (freight.warning) ctx.warnings?.push(freight.warning);
 
   return {
     schema_version: SCHEMA_VERSION,
@@ -249,22 +362,13 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
       taxable_base: t.taxable_base,
       amount: t.amount,
     })),
-    line_items: extracted.line_items.map((li) => ({
-      seq: li.seq,
-      description: cleanString(li.description),
-      qty: li.qty,
-      uom: cleanString(li.uom),
-      unit_price: li.unit_price,
-      charge: sanitiseCharge(li.charge, li.qty, li.unit_price, li.line_total),
-      line_total: li.line_total,
-      tax_rate: li.tax_rate,
-      tax_category: cleanString(li.tax_category),
-    })),
+    line_items: lineItems,
     subtotal: extracted.subtotal,
     tax_rate: extracted.tax_rate,
     tax_amount: extracted.tax_amount,
     discount: extracted.discount,
-    freight: extracted.freight,
+    freight: freight.freight,
+    rounding_adjustment: extracted.rounding_adjustment,
     total_due: extracted.total_due,
     content_hash: contentHash(ctx.bytes),
     content_sha256: contentSha256(ctx.bytes),

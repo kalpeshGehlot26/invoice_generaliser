@@ -102,6 +102,10 @@ export async function extract(input: ExtractInput): Promise<ExtractOutput> {
   // Validate the file before touching configuration or the network. An
   // unsupported or oversized upload must report *that*, not a missing API key.
   const prepared = await prepareInput(input.bytes, input.limits ?? {});
+  // Input-quality notes belong with the caller's other warnings: a marginal scan
+  // is a reason to read the figures more carefully, and that only helps if the
+  // caller is told.
+  warnings.push(...prepared.warnings);
 
   const client = input.client ?? createClient();
   const messages = buildMessages(prepared, requestedFields);
@@ -137,6 +141,7 @@ export async function extract(input: ExtractInput): Promise<ExtractOutput> {
     bytes: input.bytes,
     sourceChannel: input.sourceChannel ?? "portal_upload",
     master: input.master,
+    warnings,
   });
 
   const requested = completeRequested(model.requested, requestedFields, warnings);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { VENDOR_MASTER } from "@ifg/control-engine";
-import { cleanString, sanitiseCharge, toInvoice } from "./enrich.js";
+import { cleanString, dedupeFreight, sanitiseCharge, splitChargeAndTax, toInvoice } from "./enrich.js";
 import type { ExtractedInvoice } from "./schema.js";
 
 const BYTES = new Uint8Array([1, 2, 3, 4]);
@@ -30,6 +30,7 @@ const bare = (over: Partial<ExtractedInvoice> = {}): ExtractedInvoice => ({
   tax_amount: null,
   discount: null,
   freight: null,
+  rounding_adjustment: null,
   total_due: null,
   ...over,
 });
@@ -110,5 +111,59 @@ describe("sanitiseCharge", () => {
 
   it("keeps a charge when the row has no qty or unit price to check against", () => {
     expect(sanitiseCharge(25, null, null, 10025)).toBe(25);
+  });
+});
+
+describe("shipping counted once", () => {
+  it("drops a header freight that duplicates a shipping row", () => {
+    const r = dedupeFreight(112, [
+      { description: "poly cloth", line_total: 15120 },
+      { description: "Shipping & Packaging", line_total: 112 },
+    ]);
+    expect(r.freight).toBeNull();
+    expect(r.warning).toContain("112.00");
+  });
+
+  it("keeps a freight stated outside the line-item table", () => {
+    const r = dedupeFreight(410, [{ description: "Ti-6Al-4V bracket", line_total: 25740 }]);
+    expect(r.freight).toBe(410);
+    expect(r.warning).toBeNull();
+  });
+
+  it("keeps a shipping row whose amount differs from the header figure", () => {
+    // Two genuinely different carriage charges must both survive.
+    const r = dedupeFreight(50, [{ description: "Shipping", line_total: 112 }]);
+    expect(r.freight).toBe(50);
+  });
+});
+
+describe("a row's tax column is not a surcharge", () => {
+  it("reclassifies a charge that equals the row's own tax", () => {
+    const r = splitChargeAndTax({
+      qty: 1, unit_price: 100, charge: 12, discount: null, tax_rate: 12, tax_amount: null,
+    });
+    expect(r).toEqual({ charge: null, tax_amount: 12 });
+  });
+
+  it("leaves a genuine surcharge alone", () => {
+    const r = splitChargeAndTax({
+      qty: 1, unit_price: 100, charge: 7.5, discount: null, tax_rate: 12, tax_amount: null,
+    });
+    expect(r).toEqual({ charge: 7.5, tax_amount: null });
+  });
+
+  it("discards the duplicate rather than adding tax to the row twice", () => {
+    const r = splitChargeAndTax({
+      qty: 1, unit_price: 100, charge: 12, discount: null, tax_rate: 12, tax_amount: 12,
+    });
+    expect(r).toEqual({ charge: null, tax_amount: 12 });
+  });
+
+  it("accounts for the row discount when testing against the rate", () => {
+    // 5% off 4,600 leaves 4,370; 12% of that is 524.40.
+    const r = splitChargeAndTax({
+      qty: 23, unit_price: 200, charge: 524.4, discount: 230, tax_rate: 12, tax_amount: null,
+    });
+    expect(r).toEqual({ charge: null, tax_amount: 524.4 });
   });
 });
