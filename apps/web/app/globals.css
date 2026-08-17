@@ -1,12 +1,13 @@
 /* ============================================================================
    Invoice Generaliser — a decision instrument, not a dashboard.
 
-   Three faces, each with one job:
+   Two faces:
      display (Instrument Serif) — headings and the verdict
-     text    (Archivo)          — prose, labels, anything read as a sentence
-     mono    (JetBrains Mono)   — data only: identifiers, numerals, codes.
-                                  Never UI labels: mono + uppercase + wide
-                                  tracking is decorative and hard to read.
+     text    (Archivo)          — everything else
+
+   No monospace. Figures still align: tabular-nums gives every digit the same
+   advance width, which is the part of a fixed grid that money columns actually
+   need. Structural text keeps `white-space: pre` for indentation.
 
    Severity carries all the colour. Everything else stays monochrome so a red
    line is unmissable. Every muted tone clears 4.5:1 against the base.
@@ -37,8 +38,8 @@
   --info:       #93aabd;
   --fund:       #86d3a1;
 
-  /* Monospaced data needs more weight than prose to hold up on dark. */
-  --mono-weight: 500;
+  /* Data values carry a touch more weight than prose so figures hold up on dark. */
+  --data-weight: 500;
 
   --measure: 1280px;
   --step: 8px;
@@ -108,12 +109,10 @@ h1, h2, h3, .display {
   margin: 0;
 }
 
-/* Data, identifiers, numerals — never prose. */
+/* Data, identifiers, numerals. Proportional face, fixed digit widths. */
 .mono, code, pre, .data td:last-child, .num {
-  font-family: var(--font-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-weight: var(--mono-weight);
-  letter-spacing: -0.01em;
+  font-weight: var(--data-weight);
 }
 
 :focus-visible {
@@ -249,8 +248,8 @@ h1, h2, h3, .display {
 
 .drop .filename {
   display: block;
-  font-family: var(--font-mono), monospace;
-  font-weight: var(--mono-weight);
+  font-family: var(--font-text), sans-serif;
+  font-weight: var(--data-weight);
   font-size: 13.5px;
   word-break: break-all;
 }
@@ -314,7 +313,7 @@ details.group > summary::-webkit-details-marker { display: none; }
 
 details.group > summary::before {
   content: "+";
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-text), sans-serif;
   color: var(--bone-faint);
   width: 12px;
   flex-shrink: 0;
@@ -324,8 +323,8 @@ details.group[open] > summary::before { content: "\2212"; }
 
 .group-count {
   margin-left: auto;
-  font-family: var(--font-mono), monospace;
-  font-weight: var(--mono-weight);
+  font-family: var(--font-text), sans-serif;
+  font-weight: var(--data-weight);
   font-size: 12.5px;
   color: var(--bone-faint);
 }
@@ -384,7 +383,7 @@ textarea.other {
   background: var(--ink-sunk);
   border: 1px solid var(--rule);
   color: var(--bone);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-text), sans-serif;
   font-size: 13px;
   padding: 10px;
   resize: vertical;
@@ -542,7 +541,7 @@ textarea.other::placeholder { color: var(--bone-faint); }
 .finding .bar { background: var(--accent); border-radius: 2px; }
 
 .finding .code {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-text), sans-serif;
   font-size: 13.5px;
   color: var(--accent);
   font-weight: 600;
@@ -563,7 +562,7 @@ textarea.other::placeholder { color: var(--bone-faint); }
 
 .finding .fields {
   margin-top: 5px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-text), sans-serif;
   font-size: 12px;
   color: var(--bone-faint);
 }
@@ -617,8 +616,8 @@ textarea.other::placeholder { color: var(--bone-faint); }
 .req .key { color: var(--bone); font-weight: 500; }
 .req .val {
   color: var(--bone);
-  font-family: var(--font-mono), monospace;
-  font-weight: var(--mono-weight);
+  font-family: var(--font-text), sans-serif;
+  font-weight: var(--data-weight);
   font-size: 14px;
 }
 .req .why { color: var(--bone-faint); font-size: 13.5px; }
@@ -646,6 +645,8 @@ textarea.other::placeholder { color: var(--bone-faint); }
 .note li { margin: 6px 0; }
 
 pre.json {
+  white-space: pre;
+  tab-size: 2;
   background: var(--ink-sunk);
   border: 1px solid var(--rule);
   padding: calc(var(--step) * 2.5);
@@ -697,7 +698,7 @@ pre.json {
 }
 
 .steps .n {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-text), sans-serif;
   font-size: 11px;
   color: var(--bone-faint);
   border: 1px solid var(--rule);

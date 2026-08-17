@@ -25,8 +25,15 @@ const norm = (s: string | null | undefined) =>
  * exact silent corruption the control layer exists to catch.
  */
 const NULLISH = new Set([
-  "null", "nil", "none", "n/a", "na", "n.a.", "-", "--", "–", "—",
-  "not specified", "not applicable", "not present", "unknown", "undefined", "",
+  // Literal nulls rendered as text.
+  "null", "nil", "none", "n/a", "na", "n.a.", "-", "--", "–", "—", "undefined", "",
+  // Absence described in prose.
+  "not specified", "not applicable", "not present", "not available", "not stated",
+  "not provided", "not shown", "not given", "no data", "unknown", "absent", "missing",
+  // Status words leaking into a value field. Observed: the model returned the
+  // literal "not_found" as a clearance_id, which then rendered as though the
+  // document carried a clearance identifier reading "not_found".
+  "not_found", "not found", "notfound", "unreadable", "no value",
 ]);
 
 /**

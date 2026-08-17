@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Archivo, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Archivo, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-// Three faces, each with one job. Mono was doing all three before, which is
-// why prose was hard to read at small sizes on a dark ground.
+// Two faces. Monospace is gone entirely: tabular-nums keeps figures aligned
+// without it, and a fixed pitch was hurting readability at small sizes.
 const display = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
@@ -18,15 +18,6 @@ const text = Archivo({
   display: "swap",
 });
 
-// JetBrains Mono rather than IBM Plex Mono: a noticeably taller x-height and
-// heavier strokes, which is what small monospaced text needs to survive on a
-// dark background. Plex was legible on paper and thin on screen.
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Invoice Generaliser",
@@ -36,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${text.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${text.variable}`}>
       <body>
         <header className="masthead">
           <h1>Invoice Generaliser</h1>

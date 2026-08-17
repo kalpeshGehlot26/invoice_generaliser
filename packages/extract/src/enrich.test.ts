@@ -35,7 +35,11 @@ const bare = (over: Partial<ExtractedInvoice> = {}): ExtractedInvoice => ({
 });
 
 describe("cleanString", () => {
-  it.each(["null", "NULL", " none ", "N/A", "-", "—", "not specified", "unknown", ""])(
+  it.each([
+    "null", "NULL", " none ", "N/A", "-", "—", "not specified", "unknown", "",
+    // Status words the model has been observed putting in value fields.
+    "not_found", "NOT_FOUND", "not found", "unreadable", "not stated", "absent",
+  ])(
     "coerces %o to null",
     (v) => {
       expect(cleanString(v)).toBeNull();
