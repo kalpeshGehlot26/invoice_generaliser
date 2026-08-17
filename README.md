@@ -32,8 +32,8 @@ Configuration:
 | Variable | Default |
 |---|---|
 | `OPENROUTER_API_KEY` | required |
-| `INVOICE_MODEL_PRIMARY` | `openai/gpt-4.1-mini` |
-| `INVOICE_MODEL_FALLBACK` | `openai/gpt-4o-mini` |
+| `INVOICE_MODEL_PRIMARY` | `openai/gpt-4.1` |
+| `INVOICE_MODEL_FALLBACK` | `openai/gpt-4.1-mini` |
 | `INVOICE_MAX_UPLOAD_BYTES` | 26214400 (25 MB) |
 | `INVOICE_MAX_PDF_PAGES` | 20 |
 | `INVOICE_RASTER_DPI` | 150 |

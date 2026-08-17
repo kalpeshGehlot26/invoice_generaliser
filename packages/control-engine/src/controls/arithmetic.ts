@@ -7,7 +7,10 @@ export function vLineArithmetic(inv: Invoice): Finding[] {
 
   lines.forEach((li, idx) => {
     const i = idx + 1;
-    const expect = pyRound((li.qty || 0) * (li.unit_price || 0), 2);
+    // A per-line fee / surcharge / handling column is part of the row total.
+    // Without it, an invoice that foots perfectly reports as broken arithmetic
+    // and the control loses the reviewer's trust.
+    const expect = pyRound((li.qty || 0) * (li.unit_price || 0) + (li.charge || 0), 2);
     const got = li.line_total;
 
     if (got === null || got === undefined) {

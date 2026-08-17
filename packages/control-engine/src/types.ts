@@ -34,6 +34,8 @@ export interface LineItem {
   qty?: number | null;
   uom?: string | null;
   unit_price?: number | null;
+  /** Per-line fee, surcharge or handling charge shown as its own column. */
+  charge?: number | null;
   line_total?: number | null;
   tax_rate?: number | null;
   tax_category?: string | null;

@@ -13,13 +13,6 @@ export interface ProcessResponse {
   }>;
   control: ControlResult;
   warnings: string[];
-  meta: {
-    model: string;
-    pageCount: number;
-    sourceType: "pdf" | "image";
-    latencyMs: number;
-    repaired: boolean;
-  };
 }
 
 const SEVERITY_COLOUR: Record<Finding["severity"], string> = {
@@ -188,7 +181,7 @@ function Canonical({ invoice }: { invoice: Invoice }) {
 }
 
 export default function Results({ data }: { data: ProcessResponse }) {
-  const { control, invoice, requested, meta, warnings } = data;
+  const { control, invoice, requested, warnings } = data;
 
   return (
     <div>
@@ -225,9 +218,7 @@ export default function Results({ data }: { data: ProcessResponse }) {
       <div className="block">
         <div className="block-head">
           <h2>Canonical data</h2>
-          <span className="count">
-            {meta.sourceType} &middot; {meta.pageCount}pp &middot; {(meta.latencyMs / 1000).toFixed(1)}s
-          </span>
+          <span className="count">as read from the document</span>
         </div>
         <Canonical invoice={invoice} />
       </div>
@@ -245,12 +236,6 @@ export default function Results({ data }: { data: ProcessResponse }) {
               a field exam as it stands.
             </li>
             <li>Vendor master and PO list are demo fixtures, not live reference data.</li>
-            {meta.repaired && (
-              <li>
-                The first model response failed schema validation and was repaired on a
-                second call.
-              </li>
-            )}
             {warnings.map((w) => (
               <li key={w}>{w}</li>
             ))}
@@ -261,7 +246,7 @@ export default function Results({ data }: { data: ProcessResponse }) {
       <div className="block">
         <div className="block-head">
           <h2>Raw output</h2>
-          <span className="count">{meta.model}</span>
+          <span className="count">exactly what a consuming system receives</span>
         </div>
         <pre className="json">{JSON.stringify(data, null, 2)}</pre>
       </div>

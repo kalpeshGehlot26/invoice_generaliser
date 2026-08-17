@@ -152,7 +152,11 @@ class Finding:
 def v_line_arithmetic(inv: dict) -> list[Finding]:
     out = []
     for i, li in enumerate(inv.get("line_items", []), start=1):
-        expect = round((li.get("qty") or 0) * (li.get("unit_price") or 0), 2)
+        # A per-line fee / surcharge / handling column is part of the row total.
+        # Without it, an invoice that foots perfectly reports as broken arithmetic
+        # and the control loses the reviewer's trust.
+        expect = round((li.get("qty") or 0) * (li.get("unit_price") or 0)
+                       + (li.get("charge") or 0), 2)
         got = li.get("line_total")
         if got is None:
             out.append(Finding("LINE_MISSING_TOTAL", "warn",

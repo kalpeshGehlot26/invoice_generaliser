@@ -117,6 +117,7 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
       qty: li.qty,
       uom: cleanString(li.uom),
       unit_price: li.unit_price,
+      charge: li.charge,
       line_total: li.line_total,
       tax_rate: li.tax_rate,
       tax_category: cleanString(li.tax_category),

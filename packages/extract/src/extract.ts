@@ -1,5 +1,5 @@
 import type { VendorMaster } from "@ifg/control-engine";
-import { toInvoice } from "./enrich.js";
+import { cleanString, toInvoice } from "./enrich.js";
 import { ExtractionFailedError } from "./errors.js";
 import { getFieldByKey } from "./fields.js";
 import { prepareInput, type InputLimits } from "./input.js";
@@ -66,7 +66,16 @@ function completeRequested(
   const complete = requestedFields.map((key): RequestedField => {
     const existing = byKey.get(key);
     const source = getFieldByKey(key) ? ("canonical" as const) : ("custom" as const);
-    if (existing) return { ...existing, source };
+    if (existing) {
+      // The model returns "" for an absent value or reason; normalise to null so
+      // the requested list matches the invoice half of the response.
+      return {
+        ...existing,
+        value: cleanString(existing.value),
+        reason: cleanString(existing.reason),
+        source,
+      };
+    }
     missing.push(key);
     return {
       key,

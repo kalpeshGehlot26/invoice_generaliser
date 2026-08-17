@@ -57,6 +57,10 @@ export const LineItemSchema = z.object({
   qty: nnum(),
   uom: nstr(),
   unit_price: nnum(),
+  charge: nnum().describe(
+    "Per-line fee, surcharge, handling or freight shown as its own column on " +
+      "this row, separate from unit price. Null when the row has no such column.",
+  ),
   line_total: nnum(),
   tax_rate: nnum().describe("Percentage, e.g. 19 for 19%"),
   tax_category: nstr().describe("EN 16931 code if shown: S, Z, E, AE, K, G, O"),

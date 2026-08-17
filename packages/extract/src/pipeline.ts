@@ -20,12 +20,17 @@ export interface ProcessInput extends Omit<ExtractInput, "master"> {
   ledger?: Invoice[];
 }
 
+/**
+ * The product-level contract. Deliberately free of run metadata (model, token
+ * counts, latency): a consuming platform wants the invoice, the answers it
+ * asked for, and the decision. Run details stay server-side for logs — they are
+ * still available from `extract()` if a caller needs them.
+ */
 export interface ProcessResult {
   invoice: Invoice;
   requested: ExtractOutput["requested"];
   control: ControlResult;
   warnings: string[];
-  meta: ExtractOutput["meta"];
 }
 
 /**
@@ -90,11 +95,18 @@ export async function processInvoice(input: ProcessInput): Promise<ProcessResult
     Object.assign(control, { findings }, scoreAndRoute(findings));
   }
 
+  // Kept out of the response, kept in the logs.
+  console.info(
+    `[extract] ${extracted.invoice.doc_id} model=${extracted.meta.model} ` +
+      `${extracted.meta.sourceType} ${extracted.meta.pageCount}pp ` +
+      `${extracted.meta.latencyMs}ms tokens=${extracted.meta.promptTokens}/` +
+      `${extracted.meta.completionTokens}${extracted.meta.repaired ? " repaired" : ""}`,
+  );
+
   return {
     invoice: extracted.invoice,
     requested: extracted.requested,
     control,
     warnings: extracted.warnings,
-    meta: extracted.meta,
   };
 }

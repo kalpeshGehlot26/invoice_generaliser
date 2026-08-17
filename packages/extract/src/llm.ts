@@ -26,8 +26,8 @@ export function defaultConfig(): LlmConfig {
   return {
     apiKey: process.env.OPENROUTER_API_KEY ?? "",
     models: [
-      process.env.INVOICE_MODEL_PRIMARY ?? "openai/gpt-4.1-mini",
-      process.env.INVOICE_MODEL_FALLBACK ?? "openai/gpt-4o-mini",
+      process.env.INVOICE_MODEL_PRIMARY ?? "openai/gpt-4.1",
+      process.env.INVOICE_MODEL_FALLBACK ?? "openai/gpt-4.1-mini",
     ],
     baseURL: "https://openrouter.ai/api/v1",
     maxTokens: 16000,
