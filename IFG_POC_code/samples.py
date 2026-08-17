@@ -326,15 +326,18 @@ INVOICES = [
     #     checksum, a PO that is not in the feed, and a corridor with no rate table.
     {
         "doc_id": "DOC-0010",
-        "label": "First-time Norwegian supplier: IBAN checksum fails, PO not on file",
+        # Iceland is deliberately outside VALID_RATES: this fixture is what
+        # exercises TAX_COUNTRY_UNKNOWN. It used to be Norway, until Norway was
+        # added to the rate table and the control silently stopped firing.
+        "label": "First-time Icelandic supplier: IBAN checksum fails, PO not on file",
         "source_channel": "portal_upload",
         "invoice_number": "FJ-2026-2288",
         "issue_date": "2026-08-09", "due_date": "2026-09-08", "payment_terms_days": 30,
-        "currency": "NOK",
-        "seller": {"supplier_id": "SUP-9004", "name": "Fjordkraft Industriservice AS",
-                   "country": "NO", "vat_id": "NO998877665MVA",
-                   "iban": "NO9386011117948"},
-        "buyer": {"name": "Nordsjø Marine Ltd", "country": "GB", "vat_id": "GB556677889"},
+        "currency": "ISK",
+        "seller": {"supplier_id": "SUP-9004", "name": "Fjardaraf Idnadarthjonusta hf.",
+                   "country": "IS", "vat_id": "IS1234567",
+                   "iban": "IS140159260076545510730330"},
+        "buyer": {"name": "Nordsjo Marine Ltd", "country": "GB", "vat_id": "GB556677889"},
         "po_number": "PO-NO-0001",
         "line_items": [
             {"description": "Subsea inspection, 4 days", "qty": 4, "unit_price": 42500.00, "line_total": 170000.00},

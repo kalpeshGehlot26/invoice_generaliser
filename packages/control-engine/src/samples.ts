@@ -1349,22 +1349,22 @@ const data = {
     },
     {
       "doc_id": "DOC-0010",
-      "label": "First-time Norwegian supplier: IBAN checksum fails, PO not on file",
+      "label": "First-time Icelandic supplier: IBAN checksum fails, PO not on file",
       "source_channel": "portal_upload",
       "invoice_number": "FJ-2026-2288",
       "issue_date": "2026-08-09",
       "due_date": "2026-09-08",
       "payment_terms_days": 30,
-      "currency": "NOK",
+      "currency": "ISK",
       "seller": {
         "supplier_id": "SUP-9004",
-        "name": "Fjordkraft Industriservice AS",
-        "country": "NO",
-        "vat_id": "NO998877665MVA",
-        "iban": "NO9386011117948"
+        "name": "Fjardaraf Idnadarthjonusta hf.",
+        "country": "IS",
+        "vat_id": "IS1234567",
+        "iban": "IS140159260076545510730330"
       },
       "buyer": {
-        "name": "Nordsjø Marine Ltd",
+        "name": "Nordsjo Marine Ltd",
         "country": "GB",
         "vat_id": "GB556677889"
       },

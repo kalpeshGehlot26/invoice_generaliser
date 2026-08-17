@@ -626,20 +626,20 @@
   },
   {
     "doc_id": "DOC-0010",
-    "label": "First-time Norwegian supplier: IBAN checksum fails, PO not on file",
-    "corridor": "NO to GB",
+    "label": "First-time Icelandic supplier: IBAN checksum fails, PO not on file",
+    "corridor": "IS to GB",
     "channel": "portal_upload",
-    "currency": "NOK",
+    "currency": "ISK",
     "total_due": 212500.0,
     "invoice_number": "FJ-2026-2288",
-    "seller": "Fjordkraft Industriservice AS",
-    "buyer": "Nordsj\u00f8 Marine Ltd",
+    "seller": "Fjardaraf Idnadarthjonusta hf.",
+    "buyer": "Nordsjo Marine Ltd",
     "clearance_id": null,
     "findings": [
       {
         "code": "IBAN_CHECKSUM_FAIL",
         "severity": "critical",
-        "message": "IBAN 'NO9386011117948' fails the mod-97 checksum. Either an OCR error or a tampered remit-to line. Do not fund.",
+        "message": "IBAN 'IS140159260076545510730330' fails the mod-97 checksum. Either an OCR error or a tampered remit-to line. Do not fund.",
         "fields": [
           "payee.iban"
         ],
@@ -675,7 +675,7 @@
       {
         "code": "TAX_COUNTRY_UNKNOWN",
         "severity": "warn",
-        "message": "No VAT/GST rate table for country 'NO'.",
+        "message": "No VAT/GST rate table for country 'IS'.",
         "fields": [
           "tax_rate"
         ],

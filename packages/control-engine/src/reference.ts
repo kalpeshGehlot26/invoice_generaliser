@@ -19,12 +19,39 @@ export const VALID_RATES: Record<string, number[] | null> = {
   SG: [9.0, 0.0],
   US: null,
   CA: [5.0, 13.0, 14.975, 15.0, 0.0],
+  // Added after AT produced TAX_COUNTRY_UNKNOWN on a real invoice. Note the
+  // asymmetry: a missing country is a warn (8), a rate absent from a present
+  // country is a high (30). So an incomplete set is safer than an inaccurate
+  // one, and where a rate changed recently both values are listed rather than
+  // risking a false alarm. This table is point-in-time and is not a substitute
+  // for the registry validation in PRD section 5.
+  AT: [20.0, 13.0, 10.0, 0.0],
+  BE: [21.0, 12.0, 6.0, 0.0],
+  DK: [25.0, 0.0],
+  SE: [25.0, 12.0, 6.0, 0.0],
+  FI: [25.5, 24.0, 14.0, 10.0, 0.0],
+  PT: [23.0, 13.0, 6.0, 0.0],
+  GR: [24.0, 13.0, 6.0, 0.0],
+  HU: [27.0, 18.0, 5.0, 0.0],
+  CZ: [21.0, 15.0, 12.0, 0.0],
+  RO: [19.0, 11.0, 9.0, 5.0, 0.0],
+  NO: [25.0, 15.0, 12.0, 0.0],
+  CH: [8.1, 7.7, 3.8, 2.6, 0.0],
+  NZ: [15.0, 0.0],
+  JP: [10.0, 8.0, 0.0],
+  AE: [5.0, 0.0],
+  SA: [15.0, 0.0],
+  ZA: [15.0, 0.0],
 };
 
 export const CURRENCY_BY_COUNTRY: Record<string, string> = {
   DE: "EUR", FR: "EUR", IT: "EUR", ES: "EUR", PL: "PLN",
   NL: "EUR", IE: "EUR", GB: "GBP", AU: "AUD", IN: "INR",
   SG: "SGD", US: "USD", CA: "CAD",
+  AT: "EUR", BE: "EUR", DK: "DKK", SE: "SEK", FI: "EUR",
+  PT: "EUR", GR: "EUR", HU: "HUF", CZ: "CZK", RO: "RON",
+  NO: "NOK", CH: "CHF", NZ: "NZD", JP: "JPY", AE: "AED",
+  SA: "SAR", ZA: "ZAR",
 };
 
 export const VAT_ID_PATTERN: Record<string, RegExp> = {

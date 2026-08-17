@@ -63,12 +63,39 @@ VALID_RATES: dict[str, set[float]] = {
     "SG": {9.0, 0.0},
     "US": None,   # sales tax varies by state/county : no national rate set
     "CA": {5.0, 13.0, 14.975, 15.0, 0.0},
+    # Added after AT produced TAX_COUNTRY_UNKNOWN on a real invoice. Note the
+    # asymmetry: a missing country is a warn (8), a rate absent from a present
+    # country is a high (30). So an incomplete set is safer than an inaccurate
+    # one, and where a rate changed recently both values are listed rather than
+    # risking a false alarm. This table is point-in-time and is not a substitute
+    # for the registry validation in PRD section 5.
+    "AT": {20.0, 13.0, 10.0, 0.0},
+    "BE": {21.0, 12.0, 6.0, 0.0},
+    "DK": {25.0, 0.0},
+    "SE": {25.0, 12.0, 6.0, 0.0},
+    "FI": {25.5, 24.0, 14.0, 10.0, 0.0},
+    "PT": {23.0, 13.0, 6.0, 0.0},
+    "GR": {24.0, 13.0, 6.0, 0.0},
+    "HU": {27.0, 18.0, 5.0, 0.0},
+    "CZ": {21.0, 15.0, 12.0, 0.0},
+    "RO": {19.0, 11.0, 9.0, 5.0, 0.0},
+    "NO": {25.0, 15.0, 12.0, 0.0},
+    "CH": {8.1, 7.7, 3.8, 2.6, 0.0},
+    "NZ": {15.0, 0.0},
+    "JP": {10.0, 8.0, 0.0},
+    "AE": {5.0, 0.0},
+    "SA": {15.0, 0.0},
+    "ZA": {15.0, 0.0},
 }
 
 CURRENCY_BY_COUNTRY = {
     "DE": "EUR", "FR": "EUR", "IT": "EUR", "ES": "EUR", "PL": "PLN",
     "NL": "EUR", "IE": "EUR", "GB": "GBP", "AU": "AUD", "IN": "INR",
     "SG": "SGD", "US": "USD", "CA": "CAD",
+    "AT": "EUR", "BE": "EUR", "DK": "DKK", "SE": "SEK", "FI": "EUR",
+    "PT": "EUR", "GR": "EUR", "HU": "HUF", "CZ": "CZK", "RO": "RON",
+    "NO": "NOK", "CH": "CHF", "NZ": "NZD", "JP": "JPY", "AE": "AED",
+    "SA": "SAR", "ZA": "ZAR",
 }
 
 VAT_ID_PATTERN = {
@@ -149,38 +176,124 @@ class Finding:
 
 
 # ------------------------------------------------------------ the validators
+def _net_of(li: dict) -> float:
+    """The row's net extended amount: what it costs before its own tax.
+
+    A per-line fee column is part of the row total, and a per-line discount is
+    subtracted from it. Without both, an invoice that foots perfectly reports as
+    broken arithmetic and the control loses the reviewer's trust.
+    """
+    return round((li.get("qty") or 0) * (li.get("unit_price") or 0)
+                 - (li.get("discount") or 0)
+                 + (li.get("charge") or 0), 2)
+
+
+def _gross_of(li: dict) -> float:
+    """The same row with its own tax column added."""
+    return round(_net_of(li) + (li.get("tax_amount") or 0), 2)
+
+
+def _multipliable(li: dict) -> bool:
+    return li.get("qty") is not None and li.get("unit_price") is not None
+
+
+def detect_line_basis(inv: dict) -> str:
+    """Decide, from the rows themselves, whether the printed total column is net
+    or gross of the row's tax.
+
+    There is no universal convention. An Indian GST invoice commonly prints
+    AMOUNT as net-of-discount plus tax; a German invoice prints the net extended
+    amount and taxes only in the footer. Both are correct, and neither is
+    knowable from the number alone.
+
+    The test is agreement, not preference: a basis is only adopted if every
+    checkable row foots that way. Where no row carries tax the two hypotheses
+    are identical and "net" wins, which is what keeps this identical to the
+    earlier single-hypothesis behaviour.
+    """
+    rows = [li for li in inv.get("line_items", [])
+            if _multipliable(li) and li.get("line_total") is not None]
+    if not rows:
+        return "unknown"
+    if all(rel_close(_net_of(li), li["line_total"]) for li in rows):
+        return "net"
+    if all(rel_close(_gross_of(li), li["line_total"]) for li in rows):
+        return "gross"
+    return "unknown"
+
+
+def _has_line_level_adjustments(lines: list[dict]) -> bool:
+    """Does the document actually carry per-line discount or tax data?
+
+    The alternative subtotal readings below are only meaningful when it does. On
+    a document that states neither, "subtotal net of line discounts" is not a
+    second hypothesis - it is the same number wearing a different name, and
+    admitting it would silently retire a check rather than sharpen it.
+    """
+    return any(li.get("discount") or li.get("tax_amount") for li in lines)
+
+
 def v_line_arithmetic(inv: dict) -> list[Finding]:
     out = []
     for i, li in enumerate(inv.get("line_items", []), start=1):
-        # A per-line fee / surcharge / handling column is part of the row total.
-        # Without it, an invoice that foots perfectly reports as broken arithmetic
-        # and the control loses the reviewer's trust.
-        expect = round((li.get("qty") or 0) * (li.get("unit_price") or 0)
-                       + (li.get("charge") or 0), 2)
+        net = _net_of(li)
+        gross = _gross_of(li)
         got = li.get("line_total")
         # A lump-sum row prints no quantity or no unit price. There is nothing to
         # multiply, so asserting "qty x unit_price = 0.00" against a real total
         # invents a discrepancy that is not on the document.
-        if li.get("qty") is None or li.get("unit_price") is None:
+        if not _multipliable(li):
             continue
         if got is None:
             out.append(Finding("LINE_MISSING_TOTAL", "warn",
                                f"Line {i} has no line_total.",
                                [f"line[{i}].line_total"], "arithmetic"))
-        elif not rel_close(expect, got):
-            out.append(Finding("LINE_MATH", "high",
-                               f"Line {i}: qty x unit_price = {expect:,.2f} "
-                               f"but line_total reads {got:,.2f}.",
-                               [f"line[{i}].line_total"], "arithmetic"))
+            continue
+        # Either reading is a row that foots. Only a row that foots on neither
+        # basis is a finding.
+        if rel_close(net, got) or rel_close(gross, got):
+            continue
+        # Report against the net reading, and name the tax reading too when the
+        # row carries tax, so the reviewer can see both were tried.
+        alternative = f" (with tax, {gross:,.2f})" if li.get("tax_amount") else ""
+        out.append(Finding("LINE_MATH", "high",
+                           f"Line {i}: qty x unit_price = {net:,.2f}{alternative} "
+                           f"but line_total reads {got:,.2f}.",
+                           [f"line[{i}].line_total"], "arithmetic"))
     return out
 
 
 def v_totals(inv: dict) -> list[Finding]:
     out = []
     lines = inv.get("line_items", [])
-    if lines:
-        s = round(sum((li.get("line_total") or 0) for li in lines), 2)
-        if inv.get("subtotal") is not None and not rel_close(s, inv["subtotal"]):
+    basis = detect_line_basis(inv)
+    adjusted = _has_line_level_adjustments(lines)
+    # Whether the header subtotal is stated before or after the line discounts
+    # decides both this check and whether the header discount may be subtracted
+    # again below. Both conventions are in live use, and the default is to
+    # subtract: only positive evidence that the subtotal ALREADY nets the
+    # discount may suppress it.
+    subtotal_is_net_of_discount = False
+
+    if lines and inv.get("subtotal") is not None:
+        printed = round(sum((li.get("line_total") or 0) for li in lines), 2)
+        net = round(sum(_net_of(li) for li in lines), 2)
+        pre_discount = round(sum(_net_of(li) + (li.get("discount") or 0)
+                                 for li in lines), 2)
+
+        # Three defensible readings of "subtotal", all computed from the same
+        # figures on the page: the printed column summed as-is, the same rows net
+        # of their own tax, and the rows before their discounts were applied
+        # (the convention where the discount is aggregated into a header line).
+        matches_printed = rel_close(printed, inv["subtotal"])
+        matches_net = adjusted and rel_close(net, inv["subtotal"])
+        matches_pre_discount = adjusted and rel_close(pre_discount, inv["subtotal"])
+        subtotal_is_net_of_discount = matches_net and not matches_pre_discount
+
+        if not (matches_printed or matches_net or matches_pre_discount):
+            # Quote whichever reading the rows themselves support, so the number
+            # the reviewer sees is the one they can re-add.
+            s = net if basis == "gross" else printed
             out.append(Finding("SUBTOTAL_MISMATCH", "high",
                                f"Line items sum to {s:,.2f} but subtotal reads "
                                f"{inv['subtotal']:,.2f}. Difference "
@@ -190,7 +303,12 @@ def v_totals(inv: dict) -> list[Finding]:
     tax = inv.get("tax_amount") or 0
     disc = inv.get("discount") or 0
     freight = inv.get("freight") or 0
-    expect = round(sub + tax - disc + freight, 2)
+    rounding = inv.get("rounding_adjustment") or 0
+    # Subtracting a header discount the subtotal has already netted off would
+    # report a shortfall of exactly the discount. So it is skipped only when the
+    # rows positively show the subtotal is already net of it.
+    apply_discount = not (adjusted and lines and subtotal_is_net_of_discount)
+    expect = round(sub + tax - (disc if apply_discount else 0) + freight + rounding, 2)
     if inv.get("total_due") is not None and not rel_close(expect, inv["total_due"]):
         out.append(Finding("TOTAL_MISMATCH", "critical",
                            f"subtotal + tax - discount + freight = {expect:,.2f} "
@@ -218,6 +336,34 @@ def v_tax(inv: dict) -> list[Finding]:
         out.append(Finding("TAX_RATE_INVALID", sev,
                            f"{rate}% is not a valid {country} rate. Valid: "
                            f"{sorted(valid, reverse=True)}.", ["tax_rate"], "tax"))
+    breakdown = inv.get("tax_breakdown") or []
+    # A multi-rate invoice has no single "the" rate. Where the document prints a
+    # per-rate breakdown, that is the authoritative statement of the tax and it is
+    # checked directly; the headline-rate check below would otherwise report a
+    # mismatch on every mixed-rate invoice, which in India or the EU is routine.
+    if breakdown:
+        summed = round(sum((t.get("amount") or 0) for t in breakdown), 2)
+        if inv.get("tax_amount") is not None and not rel_close(summed, inv["tax_amount"], 0.01):
+            out.append(Finding("TAX_BREAKDOWN_MISMATCH", "high",
+                               f"Per-rate breakdown sums to {summed:,.2f} but "
+                               f"tax_amount reads {inv['tax_amount']:,.2f}. "
+                               f"Difference {abs(summed - inv['tax_amount']):,.2f}.",
+                               ["tax_amount", "tax_breakdown"], "tax"))
+        # Each band must also be internally consistent: a taxable base and a rate
+        # that do not produce the stated amount is how an under-declared band
+        # hides inside a total that foots.
+        for idx, t in enumerate(breakdown, start=1):
+            if t.get("rate") is None or t.get("taxable_base") is None or t.get("amount") is None:
+                continue
+            implied = round(t["taxable_base"] * t["rate"] / 100.0, 2)
+            if not rel_close(implied, t["amount"], 0.01):
+                out.append(Finding("TAX_BAND_MISMATCH", "high",
+                                   f"Tax band {idx}: {t['rate']}% of "
+                                   f"{t['taxable_base']:,.2f} = {implied:,.2f} but "
+                                   f"the band states {t['amount']:,.2f}.",
+                                   [f"tax_breakdown[{idx}].amount"], "tax"))
+        return out
+
     sub = inv.get("subtotal")
     if rate and sub:
         implied = round(sub * rate / 100.0, 2)

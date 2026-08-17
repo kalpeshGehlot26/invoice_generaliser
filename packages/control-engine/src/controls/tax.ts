@@ -41,6 +41,67 @@ export function vTax(inv: Invoice): Finding[] {
     });
   }
 
+  const breakdown = inv.tax_breakdown ?? [];
+
+  // A multi-rate invoice has no single "the" rate. Where the document prints a
+  // per-rate breakdown, that is the authoritative statement of the tax and it is
+  // checked directly; the headline-rate check below would otherwise report a
+  // mismatch on every mixed-rate invoice, which in India or the EU is routine.
+  if (breakdown.length > 0) {
+    const summed = pyRound(
+      breakdown.reduce((acc, t) => acc + (t.amount || 0), 0),
+      2,
+    );
+
+    if (
+      inv.tax_amount !== null &&
+      inv.tax_amount !== undefined &&
+      !relClose(summed, inv.tax_amount, 0.01)
+    ) {
+      out.push({
+        code: "TAX_BREAKDOWN_MISMATCH",
+        severity: "high",
+        message:
+          `Per-rate breakdown sums to ${fmtMoney(summed)} but tax_amount reads ` +
+          `${fmtMoney(inv.tax_amount)}. Difference ` +
+          `${fmtMoney(Math.abs(summed - inv.tax_amount))}.`,
+        fields: ["tax_amount", "tax_breakdown"],
+        control: "tax",
+      });
+    }
+
+    // Each band must also be internally consistent: a taxable base and a rate
+    // that do not produce the stated amount is how an under-declared band hides
+    // inside a total that foots.
+    breakdown.forEach((t, idx) => {
+      if (
+        t.rate === null ||
+        t.rate === undefined ||
+        t.taxable_base === null ||
+        t.taxable_base === undefined ||
+        t.amount === null ||
+        t.amount === undefined
+      ) {
+        return;
+      }
+      const implied = pyRound((t.taxable_base * t.rate) / 100.0, 2);
+      if (!relClose(implied, t.amount, 0.01)) {
+        out.push({
+          code: "TAX_BAND_MISMATCH",
+          severity: "high",
+          message:
+            `Tax band ${idx + 1}: ${pyFloat(t.rate)}% of ` +
+            `${fmtMoney(t.taxable_base)} = ${fmtMoney(implied)} but the band ` +
+            `states ${fmtMoney(t.amount)}.`,
+          fields: [`tax_breakdown[${idx + 1}].amount`],
+          control: "tax",
+        });
+      }
+    });
+
+    return out;
+  }
+
   const sub = inv.subtotal;
   // Python `if rate and sub:` — a 0.0 rate is falsy, so zero-rated invoices
   // skip this check entirely. Deliberate: ported as-is.

@@ -51,6 +51,17 @@ export interface Payee {
   iban?: string | null;
 }
 
+/**
+ * What the printed row-total column actually represents.
+ *
+ * There is no universal convention. An Indian GST invoice commonly prints
+ * AMOUNT as net-of-discount *plus* tax; a German invoice prints the net
+ * extended amount and taxes only in the footer. Both are correct, and neither
+ * is knowable from the number alone — so the basis is inferred from whether the
+ * row's components add up one way or the other, not assumed.
+ */
+export type LineBasis = "net" | "gross" | "unknown";
+
 export interface LineItem {
   seq?: number | null;
   description?: string | null;
@@ -59,6 +70,19 @@ export interface LineItem {
   unit_price?: number | null;
   /** Per-line fee, surcharge or handling charge shown as its own column. */
   charge?: number | null;
+  /**
+   * Per-line discount as an *amount*, even when the document prints a
+   * percentage. Without this a discounted row can never reconcile: the row
+   * reads 4,894.40 while qty x unit_price is 4,600.00, and the control layer
+   * reports broken arithmetic on an invoice that foots perfectly.
+   */
+  discount?: number | null;
+  /**
+   * Tax charged on this row, when the row carries its own tax column
+   * (GST/IGST/CESS, US sales tax). Needed to tell a gross row total from a
+   * wrong one.
+   */
+  tax_amount?: number | null;
   line_total?: number | null;
   tax_rate?: number | null;
   tax_category?: string | null;
@@ -102,6 +126,13 @@ export interface Invoice {
   tax_amount?: number | null;
   discount?: number | null;
   freight?: number | null;
+  /**
+   * The document's own rounding line ("ROUNDED OFF 0.10"), signed as printed.
+   * Very common where the total is presented in whole currency units. Without
+   * it, an invoice that foots to the last paisa reports a critical total
+   * mismatch for a ten-paisa rounding the issuer disclosed on the page.
+   */
+  rounding_adjustment?: number | null;
   total_due?: number | null;
   /** field path -> [value in embedded XML, value on the visual page] */
   hybrid_diff?: Record<string, [string, string]>;
