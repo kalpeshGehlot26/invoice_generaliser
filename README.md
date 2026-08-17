@@ -68,6 +68,31 @@ vendor PDF.
 - **Validate before configuring.** An unsupported or oversized upload is rejected
   before anything touches the API key or the network.
 
+## Canonical schema vs PRD §4
+
+Implemented: `schema_version`, `tax_breakdown[]` (rate, category, taxable_base,
+amount), `delivery_note_ref`, `line_items[].seq`, `content_sha256` (full digest
+alongside the truncated `content_hash` the duplicate fingerprint is built from),
+the regime block as `regime_model` / `clearance_authority` / `attested` — derived
+in code from the corridor, not asked of the model — and `field_states`, the three
+value states §4 insists on.
+
+`field_states` reports four values, not three. `present`, `absent` (the document
+genuinely has none) and `unreadable` are the PRD's states. `unknown` is added for
+fields nobody asked about, where absent-from-document and absent-from-extraction
+cannot be told apart without per-field provenance. Reporting `unknown` rather
+than folding it into `absent` is the point: that collapse is what §4 warns
+against.
+
+Deliberately not reproduced:
+
+| PRD §4 element | Why |
+|---|---|
+| `ingest{}` / `regime{}` nesting | `engine.py`'s flat shape is the golden-parity contract. The same fields exist, flattened. |
+| `received_at`, `source_uri`, `page_count` | Ingest-layer concerns owned by the caller, not the extractor |
+| `extraction_meta{}` | Removed from the response by request; still available from `extract()` |
+| `embedded_xml_present`, `hybrid_diff` | Needs Factur-X XML parsing, out of scope |
+
 ## What this cannot do yet
 
 Stated in the UI on every result, not buried here:

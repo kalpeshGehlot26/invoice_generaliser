@@ -1,5 +1,5 @@
 import type { VendorMaster } from "@ifg/control-engine";
-import { cleanString, toInvoice } from "./enrich.js";
+import { cleanString, deriveFieldStates, sanitiseCharge, toInvoice } from "./enrich.js";
 import { ExtractionFailedError } from "./errors.js";
 import { getFieldByKey } from "./fields.js";
 import { prepareInput, type InputLimits } from "./input.js";
@@ -139,9 +139,13 @@ export async function extract(input: ExtractInput): Promise<ExtractOutput> {
     master: input.master,
   });
 
+  const requested = completeRequested(model.requested, requestedFields, warnings);
+  // Needs both halves, so it is derived here rather than in toInvoice.
+  invoice.field_states = deriveFieldStates(invoice, requested);
+
   return {
     invoice,
-    requested: completeRequested(model.requested, requestedFields, warnings),
+    requested,
     warnings,
     meta: {
       model: response.model,

@@ -1,6 +1,15 @@
 import { createHash } from "node:crypto";
-import type { Invoice, VendorMaster } from "@ifg/control-engine";
-import type { ExtractedInvoice } from "./schema.js";
+import {
+  CLEARANCE_REGIMES,
+  DECENTRALISED_MANDATED,
+  type FieldState,
+  type Invoice,
+  type VendorMaster,
+} from "@ifg/control-engine";
+import { FIELD_CATALOG } from "./fields.js";
+import type { ExtractedInvoice, RequestedField } from "./schema.js";
+
+export const SCHEMA_VERSION = "1.0";
 
 const norm = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -94,6 +103,85 @@ export function contentHash(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex").slice(0, 16);
 }
 
+/** Full digest. `contentHash` stays truncated: the duplicate fingerprint is
+ *  built from it and changing it would alter every existing fingerprint. */
+export function contentSha256(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
+/**
+ * PRD §4 regime block, derived rather than extracted.
+ *
+ * A clearance regime issues a state-attested identifier; a decentralised
+ * mandate does not. The distinction is a property of the corridor, so it is
+ * computed here deterministically instead of being asked of the model.
+ */
+export function deriveRegime(
+  buyerCountry: string | null | undefined,
+  sellerCountry: string | null | undefined,
+  clearanceId: string | null,
+): Pick<Invoice, "regime_model" | "clearance_authority" | "attested"> {
+  const country = buyerCountry || sellerCountry;
+  if (country && country in CLEARANCE_REGIMES) {
+    return {
+      regime_model: "clearance",
+      clearance_authority: CLEARANCE_REGIMES[country] ?? null,
+      attested: clearanceId !== null,
+    };
+  }
+  if (country && DECENTRALISED_MANDATED.has(country)) {
+    return { regime_model: "decentralised", clearance_authority: null, attested: false };
+  }
+  return { regime_model: "none", clearance_authority: null, attested: false };
+}
+
+function resolvePath(invoice: Invoice, path: string): unknown {
+  let node: unknown = invoice;
+  for (const part of path.split(".")) {
+    if (node === null || node === undefined || typeof node !== "object") return undefined;
+    node = (node as Record<string, unknown>)[part];
+  }
+  return node;
+}
+
+/**
+ * PRD §4 demands three value states rather than two, so that omission and
+ * hallucination stay distinguishable.
+ *
+ *   present    — a value was read off the document
+ *   absent     — the document genuinely has no value (we asked, model confirmed)
+ *   unreadable — present on the page but illegible
+ *   unknown    — nobody asked, so absent-from-document and absent-from-extraction
+ *                cannot be told apart. That needs per-field provenance, which is
+ *                the same gap as the missing confidence and grounding data.
+ *
+ * `unknown` is reported rather than quietly folded into `absent`: guessing here
+ * is precisely the collapse the PRD warns against.
+ */
+export function deriveFieldStates(
+  invoice: Invoice,
+  requested: RequestedField[],
+): Record<string, FieldState> {
+  const askedFor = new Map(requested.map((r) => [r.key, r.status]));
+  const states: Record<string, FieldState> = {};
+
+  for (const field of FIELD_CATALOG) {
+    const value = resolvePath(invoice, field.path);
+    const populated = Array.isArray(value)
+      ? value.length > 0
+      : value !== null && value !== undefined;
+
+    if (populated) {
+      states[field.path] = "present";
+      continue;
+    }
+    const status = askedFor.get(field.key);
+    states[field.path] =
+      status === "unreadable" ? "unreadable" : status === "not_found" ? "absent" : "unknown";
+  }
+  return states;
+}
+
 export interface EnrichContext {
   docId: string;
   bytes: Uint8Array;
@@ -117,6 +205,7 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
   );
 
   return {
+    schema_version: SCHEMA_VERSION,
     doc_id: ctx.docId,
     label: ctx.label ?? "",
     source_channel: ctx.sourceChannel,
@@ -146,7 +235,15 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
       ? { name: cleanString(extracted.payee.name), iban: cleanString(extracted.payee.iban) }
       : null,
     po_number: cleanString(extracted.po_number),
+    delivery_note_ref: cleanString(extracted.delivery_note_ref),
+    tax_breakdown: extracted.tax_breakdown.map((t) => ({
+      rate: t.rate,
+      category: cleanString(t.category),
+      taxable_base: t.taxable_base,
+      amount: t.amount,
+    })),
     line_items: extracted.line_items.map((li) => ({
+      seq: li.seq,
       description: cleanString(li.description),
       qty: li.qty,
       uom: cleanString(li.uom),
@@ -163,6 +260,12 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
     freight: extracted.freight,
     total_due: extracted.total_due,
     content_hash: contentHash(ctx.bytes),
+    content_sha256: contentSha256(ctx.bytes),
+    ...deriveRegime(
+      extracted.buyer.country,
+      extracted.seller.country,
+      cleanString(extracted.clearance_id),
+    ),
     field_confidence: {},
     grounding: {},
   };

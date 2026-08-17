@@ -188,7 +188,7 @@ function Canonical({ invoice }: { invoice: Invoice }) {
 }
 
 export default function Results({ data }: { data: ProcessResponse }) {
-  const { control, invoice, requested, warnings } = data;
+  const { control, invoice, requested } = data;
 
   return (
     <div>
@@ -241,25 +241,6 @@ export default function Results({ data }: { data: ProcessResponse }) {
         </div>
       </div>
 
-      <div className="block">
-        <div className="note">
-          <h3>What this run could not verify</h3>
-          <ul>
-            <li>
-              No per-field confidence was produced, so the tier gates and the
-              confidence-ranked review queue did not operate.
-            </li>
-            <li>
-              No grounding, so no finding can be traced to a page region. Not defensible in
-              a field exam as it stands.
-            </li>
-            <li>Vendor master and PO list are demo fixtures, not live reference data.</li>
-            {warnings.map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
     </div>
   );
 }

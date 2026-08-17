@@ -13,6 +13,29 @@ export interface Finding {
   control: string;
 }
 
+/** PRD §4 tax_breakdown entry: one line per distinct rate. */
+export interface TaxLine {
+  rate?: number | null;
+  /** EN 16931 category code: S standard, Z zero, E exempt, AE reverse charge, K, G, O. */
+  category?: string | null;
+  taxable_base?: number | null;
+  amount?: number | null;
+}
+
+/**
+ * Whether a field is absent from the document or absent from the extraction.
+ *
+ * PRD §4: "Three value states, never two: present, null (the document genuinely
+ * has no value), MISSING (the extractor failed to return it). Collapsing these
+ * makes omission and hallucination indistinguishable in error reports."
+ *
+ * `unknown` is the honest fourth state: for a field nobody asked about, we have
+ * no per-field provenance to tell absent-from-document from absent-from-model.
+ * Distinguishing those needs the confidence and grounding data no vision model
+ * currently supplies.
+ */
+export type FieldState = "present" | "absent" | "unreadable" | "unknown";
+
 export interface Party {
   supplier_id?: string | null;
   buyer_id?: string | null;
@@ -53,6 +76,8 @@ export interface Grounding {
  * root-level scalar `tax_rate` that the PRD schema does not show).
  */
 export interface Invoice {
+  /** PRD §4: versioned, additive-only. */
+  schema_version?: string;
   doc_id: string;
   label?: string;
   source_channel?: string | null;
@@ -67,7 +92,11 @@ export interface Invoice {
   buyer?: Party;
   payee?: Payee | null;
   po_number?: string | null;
+  /** Delivery note / GRN reference. Prerequisite for a three-way match. */
+  delivery_note_ref?: string | null;
   line_items?: LineItem[];
+  /** Per-rate tax lines. Required for reverse-charge and multi-rate invoices. */
+  tax_breakdown?: TaxLine[];
   subtotal?: number | null;
   tax_rate?: number | null;
   tax_amount?: number | null;
@@ -77,6 +106,16 @@ export interface Invoice {
   /** field path -> [value in embedded XML, value on the visual page] */
   hybrid_diff?: Record<string, [string, string]>;
   content_hash?: string | null;
+  /** Full SHA-256 of the source bytes. `content_hash` stays truncated: the
+      duplicate fingerprint is built from it and must not change. */
+  content_sha256?: string | null;
+  /** Derived, not extracted — see enrich.ts. PRD §4 regime block, flattened
+      because engine.py's flat shape is the golden-parity contract. */
+  regime_model?: "clearance" | "decentralised" | "none" | null;
+  clearance_authority?: string | null;
+  attested?: boolean | null;
+  /** Per-field value state. See FieldState. */
+  field_states?: Record<string, FieldState>;
   field_confidence?: Record<string, number>;
   grounding?: Record<string, Grounding>;
 }

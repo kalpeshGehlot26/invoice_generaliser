@@ -32,6 +32,7 @@ const cleanInvoice = (): ExtractedInvoice => ({
   po_number: "PO-DE-5521",
   line_items: [
     {
+      seq: 1,
       description: "Planetengetriebe PG-240",
       qty: 40,
       uom: null,
@@ -42,6 +43,7 @@ const cleanInvoice = (): ExtractedInvoice => ({
       tax_category: "S",
     },
     {
+      seq: 2,
       description: "Montagesatz",
       qty: 40,
       uom: null,
@@ -58,6 +60,8 @@ const cleanInvoice = (): ExtractedInvoice => ({
   discount: 0.0,
   freight: 0.0,
   total_due: 84609.0,
+  delivery_note_ref: null,
+  tax_breakdown: [],
 });
 
 const stubClient = (invoice: unknown, requested: unknown[] = []): LlmClient => ({

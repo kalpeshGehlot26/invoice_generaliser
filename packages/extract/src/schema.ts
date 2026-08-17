@@ -52,7 +52,19 @@ export const PayeeSchema = z.object({
   iban: nstr(),
 });
 
+/** One line per distinct tax rate shown on the document. */
+export const TaxLineSchema = z.object({
+  rate: nnum().describe("Percentage, e.g. 19 for 19%"),
+  category: nstr().describe(
+    "EN 16931 category code if shown: S standard, Z zero-rated, E exempt, " +
+      "AE reverse charge, K intra-community, G export, O outside scope",
+  ),
+  taxable_base: nnum().describe("Amount this rate was applied to"),
+  amount: nnum().describe("Tax charged at this rate"),
+});
+
 export const LineItemSchema = z.object({
+  seq: nnum().describe("Row number as printed, if the table numbers its rows"),
   description: nstr(),
   qty: nnum(),
   uom: nstr(),
@@ -80,7 +92,17 @@ export const ExtractedInvoiceSchema = z.object({
   buyer: BuyerSchema,
   payee: PayeeSchema,
   po_number: nstr(),
+  delivery_note_ref: nstr().describe(
+    "Delivery note, despatch note or goods-received reference, if printed",
+  ),
   line_items: z.array(LineItemSchema),
+  tax_breakdown: z
+    .array(TaxLineSchema)
+    .describe(
+      "One entry per distinct tax rate shown. On an Indian invoice CGST and " +
+        "SGST are separate entries. Empty array when the document shows no " +
+        "per-rate breakdown.",
+    ),
   subtotal: nnum(),
   tax_rate: nnum().describe("Single headline tax rate as a percentage"),
   tax_amount: nnum(),
@@ -101,6 +123,7 @@ export const ModelOutputSchema = z.object({
   requested: z.array(RequestedFieldSchema),
 });
 
+export type TaxLine = z.infer<typeof TaxLineSchema>;
 export type ExtractedInvoice = z.infer<typeof ExtractedInvoiceSchema>;
 export type RequestedField = z.infer<typeof RequestedFieldSchema> & {
   source: "canonical" | "custom";
