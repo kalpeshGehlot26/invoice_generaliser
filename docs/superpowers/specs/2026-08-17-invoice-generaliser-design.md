@@ -1,7 +1,19 @@
 # Invoice Generaliser — Design
 
 **Date:** 2026-08-17
-**Status:** Approved
+**Status:** SUPERSEDED — not being built.
+
+> Superseded on 2026-08-17 by the IFG reference application in `IFG_POC_code/`,
+> whose PRD takes the opposite position: extraction is a replaceable component
+> and the deterministic control layer is the product. The current work is a
+> TypeScript port of `engine.py` — see
+> `docs/superpowers/plans/2026-08-17-control-engine-port.md`.
+>
+> Retained because the canonical schema, the locale-aware date and amount
+> handling, and the requested-field accounting model are still useful reference
+> if an extraction layer is ever built. Note the PRD identifies a real flaw in
+> the schema below: it collapses "absent from the document" and "the extractor
+> failed to return it" into a single `null`.
 
 ## Problem
 

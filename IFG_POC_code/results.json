@@ -1,0 +1,545 @@
+[
+  {
+    "doc_id": "DOC-0001",
+    "label": "Clean US digital PDF: the happy path",
+    "corridor": "US to US",
+    "channel": "email_pdf_digital",
+    "currency": "USD",
+    "total_due": 28785.0,
+    "invoice_number": "HPC-2026-4471",
+    "seller": "Halcyon Precision Components LLC",
+    "buyer": "Meridian Aerospace Inc",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "TAX_NO_NATIONAL_RATE",
+        "severity": "info",
+        "message": "US sales tax is state/county level: rate check skipped, arithmetic check still applies.",
+        "fields": [
+          "tax_rate"
+        ],
+        "control": "tax"
+      }
+    ],
+    "risk_score": 0,
+    "decision": "AUTO_FUND",
+    "reason": "all controls passed",
+    "critical": 0,
+    "high": 0,
+    "warn": 0,
+    "info": 1
+  },
+  {
+    "doc_id": "DOC-0002",
+    "label": "ZUGFeRD hybrid PDF: embedded XML and visual page disagree on the IBAN",
+    "corridor": "DE to DE",
+    "channel": "factur-x_hybrid",
+    "currency": "EUR",
+    "total_due": 84609.0,
+    "invoice_number": "NW-2026-08-1193",
+    "seller": "Nordwerk Antriebstechnik GmbH",
+    "buyer": "Rheinstahl Werke AG",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "HYBRID_DIVERGENCE",
+        "severity": "critical",
+        "message": "Hybrid PDF disagrees with its embedded XML on 'payee.iban': XML says 'DE89370400440532013000', the human-readable page says 'DE21500105174829371842'. Treat as a fraud exception, never silently reconcile.",
+        "fields": [
+          "payee.iban"
+        ],
+        "control": "hybrid_diff"
+      }
+    ],
+    "risk_score": 100,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 0,
+    "warn": 0,
+    "info": 0
+  },
+  {
+    "doc_id": "DOC-0003",
+    "label": "French scan, insufficient Factur-X profile, tax arithmetic off",
+    "corridor": "FR to FR",
+    "channel": "scan_300dpi",
+    "currency": "EUR",
+    "total_due": 22516.0,
+    "invoice_number": "AL-2026-0442",
+    "seller": "Atelier Levasseur SARL",
+    "buyer": "Groupe Cavaillon SA",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "TAX_AMOUNT_MISMATCH",
+        "severity": "high",
+        "message": "20.0% of 18,920.00 = 3,784.00 but tax_amount reads 3,596.00.",
+        "fields": [
+          "tax_amount"
+        ],
+        "control": "tax"
+      },
+      {
+        "code": "PO_OVERBILL",
+        "severity": "high",
+        "message": "Invoice 22,516.00 exceeds PO open balance 22,000.00. Value-inflation typology.",
+        "fields": [
+          "total_due"
+        ],
+        "control": "matching"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'po_number' extracted at 0.82 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "po_number"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'seller_vat_id' extracted at 0.91 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "seller_vat_id"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'invoice_number' extracted at 0.91 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "invoice_number"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'line[1].line_total' extracted at 0.87 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "line[1].line_total"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'tax_amount' extracted at 0.89 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "tax_amount"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "NO_GROUNDING",
+        "severity": "warn",
+        "message": "3 field(s) returned with no page or bounding box. Un-auditable in a field exam.",
+        "fields": [
+          "po_number",
+          "line[1].line_total",
+          "line[2].line_total"
+        ],
+        "control": "audit"
+      }
+    ],
+    "risk_score": 174,
+    "decision": "REVIEW",
+    "reason": "risk score 174, 5 high finding(s)",
+    "critical": 0,
+    "high": 5,
+    "warn": 3,
+    "info": 0
+  },
+  {
+    "doc_id": "DOC-0004",
+    "label": "India GST e-invoice with IRN: state-attested, extraction bypassed",
+    "corridor": "IN to IN",
+    "channel": "xml",
+    "currency": "INR",
+    "total_due": 1532160.0,
+    "invoice_number": "ST/2026-27/1188",
+    "seller": "Sundara Textiles Pvt Ltd",
+    "buyer": "Trivandrum Apparel Ltd",
+    "clearance_id": "IRN-3f9a7c21b8e4d5061a2f88cc90de4471bb2ce8a91d0f7734",
+    "findings": [
+      {
+        "code": "CLEARANCE_ATTESTED",
+        "severity": "info",
+        "message": "IRP/IRN identifier present (IRN-3f9a7c21b8e4d5061a2f88cc90de4471bb2ce8a91d0f7734). The tax authority independently attests this invoice exists and was issued to this buyer. Strongest verification artefact available, no debtor call needed.",
+        "fields": [
+          "clearance_id"
+        ],
+        "control": "regime"
+      },
+      {
+        "code": "STRUCTURED_INPUT",
+        "severity": "info",
+        "message": "Structured payload: extraction bypassed entirely, zero OCR cost, zero extraction risk.",
+        "fields": [],
+        "control": "regime"
+      }
+    ],
+    "risk_score": 0,
+    "decision": "AUTO_FUND",
+    "reason": "all controls passed",
+    "critical": 0,
+    "high": 0,
+    "warn": 0,
+    "info": 2
+  },
+  {
+    "doc_id": "DOC-0005",
+    "label": "Poland KSeF: Payee party differs from Seller, receivable already assigned",
+    "corridor": "PL to PL",
+    "channel": "peppol",
+    "currency": "PLN",
+    "total_due": 337020.0,
+    "invoice_number": "ZMW/08/2026/5521",
+    "seller": "Zaklad Metalowy Wisniewski Sp. z o.o.",
+    "buyer": "Volkswagen Poznan Sp. z o.o.",
+    "clearance_id": "KSEF-20260810-9F2A47C1-8831",
+    "findings": [
+      {
+        "code": "REMIT_TO_CHANGED",
+        "severity": "critical",
+        "message": "Remit-to account changed from PL61109010140000071219812874 (on file) to PL27114020040000300201355387 (on this invoice). This is the exact shape of an invoice-redirection attack. Out-of-band callback to a known contact required before funding.",
+        "fields": [
+          "payee.iban"
+        ],
+        "control": "payment_integrity"
+      },
+      {
+        "code": "PAYEE_NOT_SELLER",
+        "severity": "critical",
+        "message": "Payee 'Faktoria Kapital S.A.' differs from Seller 'Zaklad Metalowy Wisniewski Sp. z o.o.'. This invoice already carries an assignment to a third party. Funding it risks financing a receivable that has been sold to another funder.",
+        "fields": [
+          "payee.name"
+        ],
+        "control": "duplicate_financing"
+      },
+      {
+        "code": "PO_OVERBILL",
+        "severity": "high",
+        "message": "Invoice 337,020.00 exceeds PO open balance 310,000.00. Value-inflation typology.",
+        "fields": [
+          "total_due"
+        ],
+        "control": "matching"
+      },
+      {
+        "code": "CLEARANCE_ATTESTED",
+        "severity": "info",
+        "message": "KSeF identifier present (KSEF-20260810-9F2A47C1-8831). The tax authority independently attests this invoice exists and was issued to this buyer. Strongest verification artefact available, no debtor call needed.",
+        "fields": [
+          "clearance_id"
+        ],
+        "control": "regime"
+      },
+      {
+        "code": "STRUCTURED_INPUT",
+        "severity": "info",
+        "message": "Structured payload: extraction bypassed entirely, zero OCR cost, zero extraction risk.",
+        "fields": [],
+        "control": "regime"
+      }
+    ],
+    "risk_score": 230,
+    "decision": "BLOCK",
+    "reason": "2 critical control failure(s)",
+    "critical": 2,
+    "high": 1,
+    "warn": 0,
+    "info": 2
+  },
+  {
+    "doc_id": "DOC-0006",
+    "label": "Phone photo re-presentation of DOC-0001, invoice number OCR-mangled",
+    "corridor": "US to US",
+    "channel": "mobile_photo",
+    "currency": "USD",
+    "total_due": 28785.0,
+    "invoice_number": "HPC-2O26-447I",
+    "seller": "Halcyon Precision Components LLC",
+    "buyer": "Meridian Aerospace Inc",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "DUPLICATE_NORMALISED",
+        "severity": "critical",
+        "message": "Invoice number 'HPC-2O26-447I' normalises to the same key as DOC-0001 ('HPC-2026-4471'). OCR character confusion, not a different invoice.",
+        "fields": [
+          "invoice_number"
+        ],
+        "control": "duplicate"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'po_number' extracted at 0.66 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "po_number"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'invoice_number' extracted at 0.68 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "invoice_number"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'line[3].line_total' extracted at 0.60 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "line[3].line_total"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'line[1].line_total' extracted at 0.74 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "line[1].line_total"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'subtotal' extracted at 0.85 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "subtotal"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'total_due' extracted at 0.88 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "total_due"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "NO_GROUNDING",
+        "severity": "warn",
+        "message": "5 field(s) returned with no page or bounding box. Un-auditable in a field exam.",
+        "fields": [
+          "due_date",
+          "tax_amount",
+          "po_number",
+          "line[1].line_total",
+          "line[3].line_total"
+        ],
+        "control": "audit"
+      },
+      {
+        "code": "TAX_NO_NATIONAL_RATE",
+        "severity": "info",
+        "message": "US sales tax is state/county level: rate check skipped, arithmetic check still applies.",
+        "fields": [
+          "tax_rate"
+        ],
+        "control": "tax"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "info",
+        "message": "'due_date' extracted at 0.71 confidence, below the tier-3 gate of 0.75. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "due_date"
+        ],
+        "control": "confidence"
+      }
+    ],
+    "risk_score": 200,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 2,
+    "warn": 5,
+    "info": 2
+  },
+  {
+    "doc_id": "DOC-0007",
+    "label": "Australian scan: line items short of subtotal AND remit-to changed",
+    "corridor": "AU to AU",
+    "channel": "scan_200dpi",
+    "currency": "AUD",
+    "total_due": 52351.2,
+    "invoice_number": "KFS-3390-2026",
+    "seller": "Kalgoorlie Freight Services Pty Ltd",
+    "buyer": "Pilbara Minerals Logistics Pty Ltd",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "REMIT_TO_CHANGED",
+        "severity": "critical",
+        "message": "Remit-to account changed from AU BSB 083-004 ACC 15872011 (on file) to AU BSB 062-000 ACC 44219087 (on this invoice). This is the exact shape of an invoice-redirection attack. Out-of-band callback to a known contact required before funding.",
+        "fields": [
+          "payee.iban"
+        ],
+        "control": "payment_integrity"
+      },
+      {
+        "code": "SUBTOTAL_MISMATCH",
+        "severity": "high",
+        "message": "Line items sum to 43,092.00 but subtotal reads 47,592.00. Difference 4,500.00.",
+        "fields": [
+          "subtotal"
+        ],
+        "control": "arithmetic"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'payee_iban' extracted at 0.74 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "payee_iban"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'invoice_number' extracted at 0.87 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "invoice_number"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "NO_PO",
+        "severity": "warn",
+        "message": "No PO reference. Two-way match impossible: eligibility rests on debtor confirmation alone.",
+        "fields": [
+          "po_number"
+        ],
+        "control": "matching"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'line[2].line_total' extracted at 0.69 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "line[2].line_total"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'subtotal' extracted at 0.80 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "subtotal"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "warn",
+        "message": "'line[1].line_total' extracted at 0.81 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "line[1].line_total"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "NO_GROUNDING",
+        "severity": "warn",
+        "message": "5 field(s) returned with no page or bounding box. Un-auditable in a field exam.",
+        "fields": [
+          "due_date",
+          "seller_name",
+          "payee_iban",
+          "line[1].line_total",
+          "line[2].line_total"
+        ],
+        "control": "audit"
+      }
+    ],
+    "risk_score": 230,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 3,
+    "warn": 5,
+    "info": 0
+  },
+  {
+    "doc_id": "DOC-0008",
+    "label": "UK invoice: obsolete VAT rate, inverted dates, malformed VAT ID",
+    "corridor": "GB to GB",
+    "channel": "email_pdf_digital",
+    "currency": "GBP",
+    "total_due": 60160.0,
+    "invoice_number": "TF-0781",
+    "seller": "Thameside Fabrication Ltd",
+    "buyer": "Severn Modular Ltd",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "TAX_RATE_INVALID",
+        "severity": "high",
+        "message": "17.5% is not a valid GB rate. Valid: [20.0, 5.0, 0.0].",
+        "fields": [
+          "tax_rate"
+        ],
+        "control": "tax"
+      },
+      {
+        "code": "DUE_BEFORE_ISSUE",
+        "severity": "high",
+        "message": "due_date 2026-07-29 precedes issue_date 2026-08-12.",
+        "fields": [
+          "due_date"
+        ],
+        "control": "dates"
+      },
+      {
+        "code": "VAT_ID_MALFORMED",
+        "severity": "high",
+        "message": "seller VAT/tax ID 'GB43210987' does not match the GB format. Registry lookup (VIES/GSTIN) required.",
+        "fields": [
+          "seller.vat_id"
+        ],
+        "control": "identity"
+      },
+      {
+        "code": "VAT_ID_CHANGED",
+        "severity": "high",
+        "message": "Seller VAT ID differs from master (GB432109876).",
+        "fields": [
+          "seller.vat_id"
+        ],
+        "control": "master_data"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'seller_vat_id' extracted at 0.93 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "seller_vat_id"
+        ],
+        "control": "confidence"
+      }
+    ],
+    "risk_score": 150,
+    "decision": "REVIEW",
+    "reason": "risk score 150, 5 high finding(s)",
+    "critical": 0,
+    "high": 5,
+    "warn": 0,
+    "info": 0
+  }
+]

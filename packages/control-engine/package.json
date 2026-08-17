@@ -1,0 +1,13 @@
+{
+  "name": "@ifg/control-engine",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "report": "tsx src/run.ts"
+  },
+  "dependencies": {}
+}
