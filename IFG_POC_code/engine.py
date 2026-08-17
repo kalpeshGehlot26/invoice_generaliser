@@ -386,15 +386,18 @@ def v_regime(inv: dict) -> list[Finding]:
 def v_hybrid_diff(inv: dict) -> list[Finding]:
     """Factur-X / ZUGFeRD: the XML is the operational source, the PDF layer is a sensor."""
     out = []
-    diff = inv.get("hybrid_diff")
-    if not diff:
-        return out
+    # Profile sufficiency is a property of the document, not of whether a
+    # divergence happens to exist. Checking it after an early return on an empty
+    # diff made this control unreachable.
     profile = inv.get("facturx_profile")
     if profile and profile.upper() in ("MINIMUM", "BASIC WL", "BASIC"):
         out.append(Finding("FACTURX_PROFILE_INSUFFICIENT", "warn",
                            f"Factur-X profile '{profile}' is not fully EN 16931 "
                            "compliant: required business terms may be absent.",
                            [], "regime"))
+    diff = inv.get("hybrid_diff")
+    if not diff:
+        return out
     for f, (xml_v, pdf_v) in diff.items():
         sev = "critical" if f in ("payee.iban", "total_due", "buyer.vat_id") else "high"
         out.append(Finding("HYBRID_DIVERGENCE", sev,

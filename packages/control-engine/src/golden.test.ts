@@ -38,8 +38,8 @@ describe("golden file parity with engine.py", () => {
 
   // Per-document assertions so a failure names the document rather than
   // dumping the whole book as one diff.
-  for (let i = 0; i < 8; i++) {
-    describe(`document ${i + 1}`, () => {
+  for (let i = 0; i < expected.length; i++) {
+    describe(`${expected[i]!.doc_id}`, () => {
       it("matches decision and risk score", () => {
         expect({
           doc_id: actual[i]!.doc_id,
@@ -69,8 +69,18 @@ describe("golden file parity with engine.py", () => {
   });
 
   it("reproduces the portfolio split from the Python run", () => {
-    const counts: Record<string, number> = {};
-    for (const r of actual) counts[r.decision] = (counts[r.decision] ?? 0) + 1;
-    expect(counts).toEqual({ AUTO_FUND: 2, REVIEW: 2, BLOCK: 4 });
+    const split = (rows: ControlResult[]) => {
+      const counts: Record<string, number> = {};
+      for (const r of rows) counts[r.decision] = (counts[r.decision] ?? 0) + 1;
+      return counts;
+    };
+    expect(split(actual)).toEqual(split(expected));
+  });
+
+  it("exercises every control the engine declares", () => {
+    // A control that never fires is a control nobody has tested. The demo book
+    // is the only evidence any of them work.
+    const fired = new Set(actual.flatMap((r) => r.findings.map((f) => f.code)));
+    expect(fired.size).toBeGreaterThanOrEqual(34);
   });
 });

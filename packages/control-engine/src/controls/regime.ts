@@ -72,12 +72,10 @@ export function vRegime(inv: Invoice): Finding[] {
  */
 export function vHybridDiff(inv: Invoice): Finding[] {
   const out: Finding[] = [];
-  const diff = inv.hybrid_diff;
 
-  // Python `if not diff: return out` — an empty dict is falsy, so a document
-  // with `hybrid_diff: {}` exits here and never reaches the profile check below.
-  if (!diff || Object.keys(diff).length === 0) return out;
-
+  // Profile sufficiency is a property of the document, not of whether a
+  // divergence happens to exist. Checking it after an early return on an empty
+  // diff made this control unreachable.
   const profile = inv.facturx_profile;
   if (profile && ["MINIMUM", "BASIC WL", "BASIC"].includes(profile.toUpperCase())) {
     out.push({
@@ -90,6 +88,9 @@ export function vHybridDiff(inv: Invoice): Finding[] {
       control: "regime",
     });
   }
+
+  const diff = inv.hybrid_diff;
+  if (!diff || Object.keys(diff).length === 0) return out;
 
   for (const [f, pair] of Object.entries(diff)) {
     const [xmlV, pdfV] = pair;

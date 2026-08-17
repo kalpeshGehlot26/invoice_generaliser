@@ -59,6 +59,14 @@ const data = {
       "iban": "GB29NWBK60161331926819",
       "country": "GB",
       "since": "2018-04"
+    },
+    "SUP-8813": {
+      "name": "Officine Meccaniche Barzanti S.r.l.",
+      "vat_id": "IT04729310158",
+      "iban": null,
+      "account": "IT c/c 000012345678",
+      "country": "IT",
+      "since": "2021-09"
     }
   },
   "BUYER_POS": {
@@ -1178,6 +1186,710 @@ const data = {
         },
         "line[1].line_total": {
           "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "doc_id": "DOC-0009",
+      "label": "Italian invoice with no SdI identifier and arithmetic that does not foot",
+      "source_channel": "email_pdf_digital",
+      "invoice_number": "OMB-2026-0417",
+      "issue_date": "2026-08-05",
+      "due_date": "2026-10-04",
+      "payment_terms_days": 60,
+      "currency": "EUR",
+      "seller": {
+        "supplier_id": "SUP-8813",
+        "name": "Officine Meccaniche Barzanti S.r.l.",
+        "country": "IT",
+        "vat_id": "IT04729310158"
+      },
+      "buyer": {
+        "name": "Carrozzeria Lombarda SpA",
+        "country": "IT",
+        "vat_id": "IT09876543210"
+      },
+      "line_items": [
+        {
+          "description": "Staffa acciaio zincato",
+          "qty": 60,
+          "unit_price": 148.0,
+          "line_total": 8080.0
+        },
+        {
+          "description": "Trattamento superficiale",
+          "qty": 60,
+          "unit_price": 22.5,
+          "line_total": null
+        },
+        {
+          "description": "Imballaggio industriale",
+          "qty": 1,
+          "unit_price": 340.0,
+          "line_total": 340.0
+        }
+      ],
+      "subtotal": 9770.0,
+      "tax_rate": 22.0,
+      "tax_amount": 2149.4,
+      "discount": 0.0,
+      "freight": 0.0,
+      "total_due": 12419.4,
+      "content_hash": "b81f5c07d3a94612",
+      "field_confidence": {
+        "invoice_number": 0.981,
+        "issue_date": 0.977,
+        "due_date": 0.969,
+        "total_due": 0.983,
+        "subtotal": 0.971,
+        "tax_amount": 0.964,
+        "seller_vat_id": 0.978,
+        "seller_name": 0.986,
+        "line[1].line_total": 0.942,
+        "line[3].line_total": 0.938
+      },
+      "grounding": {
+        "invoice_number": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "issue_date": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "due_date": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total_due": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "subtotal": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tax_amount": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "seller_vat_id": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "seller_name": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "line[1].line_total": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "line[3].line_total": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "doc_id": "DOC-0010",
+      "label": "First-time Norwegian supplier: IBAN checksum fails, PO not on file",
+      "source_channel": "portal_upload",
+      "invoice_number": "FJ-2026-2288",
+      "issue_date": "2026-08-09",
+      "due_date": "2026-09-08",
+      "payment_terms_days": 30,
+      "currency": "NOK",
+      "seller": {
+        "supplier_id": "SUP-9004",
+        "name": "Fjordkraft Industriservice AS",
+        "country": "NO",
+        "vat_id": "NO998877665MVA",
+        "iban": "NO9386011117948"
+      },
+      "buyer": {
+        "name": "Nordsjø Marine Ltd",
+        "country": "GB",
+        "vat_id": "GB556677889"
+      },
+      "po_number": "PO-NO-0001",
+      "line_items": [
+        {
+          "description": "Subsea inspection, 4 days",
+          "qty": 4,
+          "unit_price": 42500.0,
+          "line_total": 170000.0
+        }
+      ],
+      "subtotal": 170000.0,
+      "tax_rate": 25.0,
+      "tax_amount": 42500.0,
+      "discount": 0.0,
+      "freight": 0.0,
+      "total_due": 212500.0,
+      "content_hash": "3f77a1cc58b0e294",
+      "field_confidence": {
+        "invoice_number": 0.953,
+        "total_due": 0.961,
+        "subtotal": 0.958,
+        "tax_amount": 0.949,
+        "payee_iban": 0.712,
+        "seller_name": 0.934,
+        "po_number": 0.901
+      },
+      "grounding": {
+        "invoice_number": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total_due": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "subtotal": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tax_amount": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "payee_iban": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "seller_name": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "po_number": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "doc_id": "DOC-0011",
+      "label": "Exact re-submission of DOC-0001 through the supplier portal",
+      "source_channel": "portal_upload",
+      "invoice_number": "HPC-2026-4471",
+      "issue_date": "2026-08-04",
+      "due_date": "2026-09-03",
+      "payment_terms_days": 30,
+      "currency": "USD",
+      "seller": {
+        "supplier_id": "SUP-1041",
+        "name": "Halcyon Precision Components LLC",
+        "country": "US",
+        "vat_id": null
+      },
+      "buyer": {
+        "name": "Meridian Aerospace Inc",
+        "country": "US",
+        "vat_id": null
+      },
+      "po_number": "PO-88104",
+      "line_items": [
+        {
+          "description": "Ti-6Al-4V bracket, machined",
+          "qty": 120,
+          "unit_price": 214.5,
+          "line_total": 25740.0
+        },
+        {
+          "description": "Anodising, type II",
+          "qty": 120,
+          "unit_price": 18.75,
+          "line_total": 2250.0
+        },
+        {
+          "description": "CoC + material cert pack",
+          "qty": 1,
+          "unit_price": 385.0,
+          "line_total": 385.0
+        }
+      ],
+      "subtotal": 28375.0,
+      "tax_rate": 0.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "freight": 410.0,
+      "total_due": 28785.0,
+      "content_hash": "a1f0c93b77de4210",
+      "field_confidence": {
+        "invoice_number": 0.994,
+        "total_due": 0.996,
+        "subtotal": 0.993,
+        "tax_amount": 0.991,
+        "po_number": 0.987,
+        "seller_name": 0.99
+      },
+      "grounding": {
+        "invoice_number": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total_due": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "subtotal": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tax_amount": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "po_number": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "seller_name": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "doc_id": "DOC-0012",
+      "label": "Renumbered resubmission of DOC-0004: only the content hash matches",
+      "source_channel": "portal_upload",
+      "invoice_number": "ST/2026-27/7742",
+      "clearance_id": "IRN-3f9a7c21b8e4d5061a2f88cc90de4471bb2ce8a91d0f7734",
+      "issue_date": "2026-08-11",
+      "due_date": "2026-10-10",
+      "payment_terms_days": 60,
+      "currency": "INR",
+      "seller": {
+        "supplier_id": "SUP-4412",
+        "name": "Sundara Textiles Pvt Ltd",
+        "country": "IN",
+        "vat_id": "27AAKCS9575H1ZP"
+      },
+      "buyer": {
+        "name": "Trivandrum Apparel Ltd",
+        "country": "IN",
+        "vat_id": "29AABCT1332L1ZT"
+      },
+      "po_number": "PO-IN-3301",
+      "line_items": [
+        {
+          "description": "Combed cotton 40s, 2400 kg",
+          "qty": 2400,
+          "unit_price": 512.0,
+          "line_total": 1228800.0
+        },
+        {
+          "description": "Reactive dyeing",
+          "qty": 2400,
+          "unit_price": 96.0,
+          "line_total": 230400.0
+        }
+      ],
+      "subtotal": 1459200.0,
+      "tax_rate": 5.0,
+      "tax_amount": 72960.0,
+      "discount": 0.0,
+      "freight": 0.0,
+      "total_due": 1532160.0,
+      "content_hash": "9d3c04ff1baa7726",
+      "field_confidence": {
+        "invoice_number": 0.996,
+        "total_due": 0.998,
+        "subtotal": 0.997,
+        "tax_amount": 0.995,
+        "clearance_id": 0.999,
+        "seller_vat_id": 0.994
+      },
+      "grounding": {
+        "invoice_number": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total_due": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "subtotal": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tax_amount": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "clearance_id": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "seller_vat_id": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "doc_id": "DOC-0013",
+      "label": "Same supplier, same amount, two days apart: probable re-presentation",
+      "source_channel": "email_pdf_digital",
+      "invoice_number": "SDT-AUG-5590",
+      "issue_date": "2026-08-13",
+      "due_date": "2026-10-12",
+      "payment_terms_days": 60,
+      "currency": "INR",
+      "seller": {
+        "supplier_id": "SUP-4412",
+        "name": "Sundara Textiles Pvt Ltd",
+        "country": "IN",
+        "vat_id": "27AAKCS9575H1ZP"
+      },
+      "buyer": {
+        "name": "Trivandrum Apparel Ltd",
+        "country": "IN",
+        "vat_id": "29AABCT1332L1ZT"
+      },
+      "po_number": "PO-IN-3301",
+      "line_items": [
+        {
+          "description": "Combed cotton 40s, 2400 kg",
+          "qty": 2400,
+          "unit_price": 512.0,
+          "line_total": 1228800.0
+        },
+        {
+          "description": "Reactive dyeing",
+          "qty": 2400,
+          "unit_price": 96.0,
+          "line_total": 230400.0
+        }
+      ],
+      "subtotal": 1459200.0,
+      "tax_rate": 5.0,
+      "tax_amount": 72960.0,
+      "discount": 0.0,
+      "freight": 0.0,
+      "total_due": 1532160.0,
+      "content_hash": "cc1902ea7740fb35",
+      "field_confidence": {
+        "invoice_number": 0.968,
+        "total_due": 0.981,
+        "subtotal": 0.977,
+        "tax_amount": 0.972,
+        "seller_vat_id": 0.965
+      },
+      "grounding": {
+        "invoice_number": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total_due": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "subtotal": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tax_amount": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "seller_vat_id": {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "doc_id": "DOC-0014",
+      "label": "Pre-billed German Peppol invoice: terms, currency and PO buyer all disagree",
+      "source_channel": "peppol",
+      "invoice_number": "NW-2026-09-1204",
+      "issue_date": "2026-09-01",
+      "due_date": "2026-10-31",
+      "payment_terms_days": 30,
+      "currency": "USD",
+      "seller": {
+        "supplier_id": "SUP-2277",
+        "name": "Nordwerk Antriebstechnik GmbH",
+        "country": "DE",
+        "vat_id": "DE811234567",
+        "iban": "DE89370400440532013000"
+      },
+      "buyer": {
+        "name": "Rheinstahl Werke AG",
+        "country": "DE",
+        "vat_id": "DE555000111"
+      },
+      "po_number": "PO-DE-5521",
+      "line_items": [
+        {
+          "description": "Planetengetriebe PG-240, Vorserie",
+          "qty": 12,
+          "unit_price": 1685.0,
+          "line_total": 20220.0
+        }
+      ],
+      "subtotal": 20220.0,
+      "tax_rate": 19.0,
+      "tax_amount": 3841.8,
+      "discount": 0.0,
+      "freight": 0.0,
+      "total_due": 24061.8,
+      "content_hash": "6a40dd11c8e7b503",
+      "field_confidence": {
+        "invoice_number": 0.991,
+        "issue_date": 0.988,
+        "due_date": 0.984,
+        "total_due": 0.993,
+        "subtotal": 0.99,
+        "tax_amount": 0.987,
+        "buyer_vat_id": 0.979,
+        "po_number": 0.985
+      },
+      "grounding": {
+        "invoice_number": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "issue_date": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "due_date": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total_due": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "subtotal": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "tax_amount": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "buyer_vat_id": {
+          "page": 0,
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "po_number": {
+          "page": 0,
           "bbox": [
             0,
             0,

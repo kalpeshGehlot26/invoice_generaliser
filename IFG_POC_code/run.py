@@ -21,9 +21,14 @@ def main() -> None:
             ledger.append(inv)
 
     width = 96
+    # Counted from the book rather than hardcoded: the previous literal said
+    # "5 corridors, 6 input channels" and understated the actual coverage.
+    corridors = len({r["corridor"] for r in results})
+    channels = len({r["channel"] for r in results})
     print("=" * width)
     print("IFG INVOICE INGESTION POC : DETERMINISTIC CONTROL LAYER".center(width))
-    print("8 documents, 5 corridors, 6 input channels".center(width))
+    print(f"{len(results)} documents, {corridors} corridors, "
+          f"{channels} input channels".center(width))
     print("=" * width)
 
     for r in results:

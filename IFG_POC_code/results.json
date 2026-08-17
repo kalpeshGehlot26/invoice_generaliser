@@ -117,6 +117,13 @@
         "control": "confidence"
       },
       {
+        "code": "FACTURX_PROFILE_INSUFFICIENT",
+        "severity": "warn",
+        "message": "Factur-X profile 'BASIC' is not fully EN 16931 compliant: required business terms may be absent.",
+        "fields": [],
+        "control": "regime"
+      },
+      {
         "code": "LOW_CONFIDENCE",
         "severity": "warn",
         "message": "'line[1].line_total' extracted at 0.87 confidence, below the tier-2 gate of 0.90. Queue a targeted high-resolution re-read of its bounding box.",
@@ -146,12 +153,12 @@
         "control": "audit"
       }
     ],
-    "risk_score": 174,
+    "risk_score": 182,
     "decision": "REVIEW",
-    "reason": "risk score 174, 5 high finding(s)",
+    "reason": "risk score 182, 5 high finding(s)",
     "critical": 0,
     "high": 5,
-    "warn": 3,
+    "warn": 4,
     "info": 0
   },
   {
@@ -541,5 +548,342 @@
     "high": 5,
     "warn": 0,
     "info": 0
+  },
+  {
+    "doc_id": "DOC-0009",
+    "label": "Italian invoice with no SdI identifier and arithmetic that does not foot",
+    "corridor": "IT to IT",
+    "channel": "email_pdf_digital",
+    "currency": "EUR",
+    "total_due": 12419.4,
+    "invoice_number": "OMB-2026-0417",
+    "seller": "Officine Meccaniche Barzanti S.r.l.",
+    "buyer": "Carrozzeria Lombarda SpA",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "TOTAL_MISMATCH",
+        "severity": "critical",
+        "message": "subtotal + tax - discount + freight = 11,919.40 but total_due reads 12,419.40. Never auto-repair a total: recompute and flag.",
+        "fields": [
+          "total_due"
+        ],
+        "control": "arithmetic"
+      },
+      {
+        "code": "CLEARANCE_MISSING",
+        "severity": "high",
+        "message": "IT is a clearance regime (SdI) but no attested identifier was found. A genuine invoice in this corridor should have one.",
+        "fields": [
+          "clearance_id"
+        ],
+        "control": "regime"
+      },
+      {
+        "code": "LINE_MATH",
+        "severity": "high",
+        "message": "Line 1: qty x unit_price = 8,880.00 but line_total reads 8,080.00.",
+        "fields": [
+          "line[1].line_total"
+        ],
+        "control": "arithmetic"
+      },
+      {
+        "code": "SUBTOTAL_MISMATCH",
+        "severity": "high",
+        "message": "Line items sum to 8,420.00 but subtotal reads 9,770.00. Difference 1,350.00.",
+        "fields": [
+          "subtotal"
+        ],
+        "control": "arithmetic"
+      },
+      {
+        "code": "LINE_MISSING_TOTAL",
+        "severity": "warn",
+        "message": "Line 2 has no line_total.",
+        "fields": [
+          "line[2].line_total"
+        ],
+        "control": "arithmetic"
+      },
+      {
+        "code": "NO_PO",
+        "severity": "warn",
+        "message": "No PO reference. Two-way match impossible: eligibility rests on debtor confirmation alone.",
+        "fields": [
+          "po_number"
+        ],
+        "control": "matching"
+      }
+    ],
+    "risk_score": 206,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 3,
+    "warn": 2,
+    "info": 0
+  },
+  {
+    "doc_id": "DOC-0010",
+    "label": "First-time Norwegian supplier: IBAN checksum fails, PO not on file",
+    "corridor": "NO to GB",
+    "channel": "portal_upload",
+    "currency": "NOK",
+    "total_due": 212500.0,
+    "invoice_number": "FJ-2026-2288",
+    "seller": "Fjordkraft Industriservice AS",
+    "buyer": "Nordsj\u00f8 Marine Ltd",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "IBAN_CHECKSUM_FAIL",
+        "severity": "critical",
+        "message": "IBAN 'NO9386011117948' fails the mod-97 checksum. Either an OCR error or a tampered remit-to line. Do not fund.",
+        "fields": [
+          "payee.iban"
+        ],
+        "control": "payment_integrity"
+      },
+      {
+        "code": "PO_NOT_FOUND",
+        "severity": "high",
+        "message": "PO 'PO-NO-0001' not found in the buyer PO feed.",
+        "fields": [
+          "po_number"
+        ],
+        "control": "matching"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'payee_iban' extracted at 0.71 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "payee_iban"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "LOW_CONFIDENCE",
+        "severity": "high",
+        "message": "'po_number' extracted at 0.90 confidence, below the tier-1 gate of 0.95. Queue a targeted high-resolution re-read of its bounding box.",
+        "fields": [
+          "po_number"
+        ],
+        "control": "confidence"
+      },
+      {
+        "code": "TAX_COUNTRY_UNKNOWN",
+        "severity": "warn",
+        "message": "No VAT/GST rate table for country 'NO'.",
+        "fields": [
+          "tax_rate"
+        ],
+        "control": "tax"
+      },
+      {
+        "code": "SUPPLIER_UNKNOWN",
+        "severity": "warn",
+        "message": "Supplier id 'SUP-9004' is not in the vendor master. First-time supplier: full KYB required before funding.",
+        "fields": [
+          "seller.name"
+        ],
+        "control": "master_data"
+      }
+    ],
+    "risk_score": 206,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 3,
+    "warn": 2,
+    "info": 0
+  },
+  {
+    "doc_id": "DOC-0011",
+    "label": "Exact re-submission of DOC-0001 through the supplier portal",
+    "corridor": "US to US",
+    "channel": "portal_upload",
+    "currency": "USD",
+    "total_due": 28785.0,
+    "invoice_number": "HPC-2026-4471",
+    "seller": "Halcyon Precision Components LLC",
+    "buyer": "Meridian Aerospace Inc",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "DUPLICATE_EXACT",
+        "severity": "critical",
+        "message": "Exact duplicate of DOC-0001 (same supplier + invoice number), already funded.",
+        "fields": [
+          "invoice_number"
+        ],
+        "control": "duplicate"
+      },
+      {
+        "code": "TAX_NO_NATIONAL_RATE",
+        "severity": "info",
+        "message": "US sales tax is state/county level: rate check skipped, arithmetic check still applies.",
+        "fields": [
+          "tax_rate"
+        ],
+        "control": "tax"
+      }
+    ],
+    "risk_score": 100,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 0,
+    "warn": 0,
+    "info": 1
+  },
+  {
+    "doc_id": "DOC-0012",
+    "label": "Renumbered resubmission of DOC-0004: only the content hash matches",
+    "corridor": "IN to IN",
+    "channel": "portal_upload",
+    "currency": "INR",
+    "total_due": 1532160.0,
+    "invoice_number": "ST/2026-27/7742",
+    "seller": "Sundara Textiles Pvt Ltd",
+    "buyer": "Trivandrum Apparel Ltd",
+    "clearance_id": "IRN-3f9a7c21b8e4d5061a2f88cc90de4471bb2ce8a91d0f7734",
+    "findings": [
+      {
+        "code": "DUPLICATE_CONTENT_HASH",
+        "severity": "critical",
+        "message": "Byte-level content hash matches DOC-0004: the same file re-submitted through a different channel.",
+        "fields": [],
+        "control": "duplicate"
+      },
+      {
+        "code": "CLEARANCE_ATTESTED",
+        "severity": "info",
+        "message": "IRP/IRN identifier present (IRN-3f9a7c21b8e4d5061a2f88cc90de4471bb2ce8a91d0f7734). The tax authority independently attests this invoice exists and was issued to this buyer. Strongest verification artefact available, no debtor call needed.",
+        "fields": [
+          "clearance_id"
+        ],
+        "control": "regime"
+      }
+    ],
+    "risk_score": 100,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 0,
+    "warn": 0,
+    "info": 1
+  },
+  {
+    "doc_id": "DOC-0013",
+    "label": "Same supplier, same amount, two days apart: probable re-presentation",
+    "corridor": "IN to IN",
+    "channel": "email_pdf_digital",
+    "currency": "INR",
+    "total_due": 1532160.0,
+    "invoice_number": "SDT-AUG-5590",
+    "seller": "Sundara Textiles Pvt Ltd",
+    "buyer": "Trivandrum Apparel Ltd",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "CLEARANCE_MISSING",
+        "severity": "high",
+        "message": "IN is a clearance regime (IRP/IRN) but no attested identifier was found. A genuine invoice in this corridor should have one.",
+        "fields": [
+          "clearance_id"
+        ],
+        "control": "regime"
+      },
+      {
+        "code": "DUPLICATE_FUZZY",
+        "severity": "high",
+        "message": "Same supplier, same amount and currency, issue dates 2 day(s) apart from DOC-0004. Probable re-presentation.",
+        "fields": [
+          "total_due",
+          "issue_date"
+        ],
+        "control": "duplicate"
+      }
+    ],
+    "risk_score": 60,
+    "decision": "REVIEW",
+    "reason": "risk score 60, 2 high finding(s)",
+    "critical": 0,
+    "high": 2,
+    "warn": 0,
+    "info": 0
+  },
+  {
+    "doc_id": "DOC-0014",
+    "label": "Pre-billed German Peppol invoice: terms, currency and PO buyer all disagree",
+    "corridor": "DE to DE",
+    "channel": "peppol",
+    "currency": "USD",
+    "total_due": 24061.8,
+    "invoice_number": "NW-2026-09-1204",
+    "seller": "Nordwerk Antriebstechnik GmbH",
+    "buyer": "Rheinstahl Werke AG",
+    "clearance_id": null,
+    "findings": [
+      {
+        "code": "PO_BUYER_MISMATCH",
+        "severity": "critical",
+        "message": "PO belongs to a different buyer entity than the invoice names.",
+        "fields": [
+          "buyer.vat_id"
+        ],
+        "control": "matching"
+      },
+      {
+        "code": "FUTURE_DATED",
+        "severity": "high",
+        "message": "issue_date 2026-09-01 is in the future. Pre-billing is the single most common eligibility breach.",
+        "fields": [
+          "issue_date"
+        ],
+        "control": "eligibility"
+      },
+      {
+        "code": "CURRENCY_COUNTRY_MISMATCH",
+        "severity": "warn",
+        "message": "Seller is in DE but invoice currency is USD (expected EUR). Legitimate for export, but the FX and the debtor's payment currency must agree.",
+        "fields": [
+          "currency"
+        ],
+        "control": "currency"
+      },
+      {
+        "code": "TERMS_MISMATCH",
+        "severity": "warn",
+        "message": "Stated terms are 30 days but issue-to-due is 60 days.",
+        "fields": [
+          "due_date"
+        ],
+        "control": "dates"
+      },
+      {
+        "code": "TRANSPORT_ONLY",
+        "severity": "info",
+        "message": "DE is a decentralised regime: the Peppol/EN 16931 payload proves transport, not state attestation. Do not treat structured as verified.",
+        "fields": [],
+        "control": "regime"
+      },
+      {
+        "code": "STRUCTURED_INPUT",
+        "severity": "info",
+        "message": "Structured payload: extraction bypassed entirely, zero OCR cost, zero extraction risk.",
+        "fields": [],
+        "control": "regime"
+      }
+    ],
+    "risk_score": 146,
+    "decision": "BLOCK",
+    "reason": "1 critical control failure(s)",
+    "critical": 1,
+    "high": 1,
+    "warn": 2,
+    "info": 2
   }
 ]

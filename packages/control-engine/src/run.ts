@@ -55,9 +55,19 @@ export function main(): void {
   const line = "=".repeat(width);
   const out: string[] = [];
 
+  // Counted from the book rather than hardcoded: the previous literal said
+  // "5 corridors, 6 input channels" and understated the actual coverage.
+  const corridors = new Set(results.map((r) => r.corridor)).size;
+  const channels = new Set(results.map((r) => r.channel)).size;
+
   out.push(line);
   out.push(center("IFG INVOICE INGESTION POC : DETERMINISTIC CONTROL LAYER", width));
-  out.push(center("8 documents, 5 corridors, 6 input channels", width));
+  out.push(
+    center(
+      `${results.length} documents, ${corridors} corridors, ${channels} input channels`,
+      width,
+    ),
+  );
   out.push(line);
 
   for (const r of results) {

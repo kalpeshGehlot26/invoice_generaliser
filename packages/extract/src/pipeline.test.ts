@@ -4,12 +4,16 @@ import { VENDOR_MASTER, runControls } from "@ifg/control-engine";
 import { resolveSupplierId, toInvoice } from "./enrich.js";
 import type { LlmClient } from "./llm.js";
 import { processInvoice } from "./pipeline.js";
-import { ExtractedInvoiceSchema, ModelOutputSchema } from "./schema.js";
+import {
+  ExtractedInvoiceSchema,
+  ModelOutputSchema,
+  type ExtractedInvoice,
+} from "./schema.js";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
 /** A clean invoice from a supplier that exists in the demo vendor master. */
-const cleanInvoice = () => ({
+const cleanInvoice = (): ExtractedInvoice => ({
   invoice_number: "NW-2026-08-1193",
   clearance_id: null,
   issue_date: "2026-08-06",

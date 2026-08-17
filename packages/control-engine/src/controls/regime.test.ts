@@ -46,21 +46,25 @@ describe("vHybridDiff", () => {
   });
 
   /**
-   * PINNED KNOWN DEFECT, ported deliberately.
+   * REGRESSION GUARD.
    *
-   * engine.py returns early on a falsy `hybrid_diff`, so a document with an
-   * empty diff never reaches the profile check below it. The result is that
-   * FACTURX_PROFILE_INSUFFICIENT is unreachable unless a divergence also
-   * exists — even though the PRD lists it as a control in its own right, and
-   * DOC-0003 ("insufficient Factur-X profile") is the fixture built to
-   * demonstrate it. Confirmed against results.json: the code never appears.
+   * This control was unreachable: v_hybrid_diff returned early on a falsy
+   * `hybrid_diff`, so a document with an insufficient profile and no divergence
+   * never reached the profile check. DOC-0003 is the fixture built to
+   * demonstrate it and the code appeared nowhere in results.json.
    *
-   * The port reproduces this exactly. Changing it is a behaviour change and
-   * must break this test on purpose.
+   * Profile sufficiency is a property of the document, independent of whether a
+   * divergence exists, so the check now runs first. Fixed in both engine.py and
+   * this port together.
    */
-  it("cannot report an insufficient profile when the diff is empty (known defect)", () => {
+  it("reports an insufficient profile even when there is no divergence", () => {
     const f = vHybridDiff(base({ facturx_profile: "BASIC", hybrid_diff: {} }));
-    expect(f).toEqual([]);
+    expect(f.map((x) => x.code)).toEqual(["FACTURX_PROFILE_INSUFFICIENT"]);
+    expect(f[0]!.severity).toBe("warn");
+  });
+
+  it("stays silent on a fully compliant profile with no divergence", () => {
+    expect(vHybridDiff(base({ facturx_profile: "EN 16931", hybrid_diff: {} }))).toEqual([]);
   });
 
   it("reports an insufficient profile only alongside a divergence", () => {
