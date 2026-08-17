@@ -1,52 +1,80 @@
 /* ============================================================================
    Invoice Generaliser — a decision instrument, not a dashboard.
 
-   One face: Archivo, at three weights.
+   Styled to The Interface Financial Group's own identity: navy for structure
+   and type, orange as the single accent, white surfaces on a cool grey page.
+   One face — Poppins, the geometric sans their site uses — at three weights.
 
    Hierarchy comes from size, weight and colour rather than from switching
-   typeface. Headings carry 600 and tighter tracking — a 400-weight sans at
-   heading size reads as body copy that happens to be large, which is the trap
-   when a display serif is removed.
+   typeface. Headings carry 600 and tighter tracking.
 
    No monospace. Figures still align: tabular-nums gives every digit the same
    advance width, which is the part of a fixed grid that money columns actually
    need. Structural text keeps `white-space: pre` for indentation.
 
-   Severity carries all the colour. Everything else stays monochrome so a red
-   line is unmissable. Every muted tone clears 4.5:1 against the base.
+   COLOUR DISCIPLINE. Orange is the brand, and their orange (#f16a22) is only
+   3.08:1 on white — it fails AA for text at every size. So it is used for
+   fills, rules and marks, NEVER for words. Type is their navy (#355084, a
+   comfortable 7.98:1); severity owns the remaining colour, and every severity
+   tone below clears 4.5:1 on both the page and the card.
    ========================================================================= */
 
 :root {
-  /* Tells the browser to render native scrollbars, form controls and
-     selection dark. Without it Chrome paints a light page scrollbar that
-     fights everything else. */
-  color-scheme: dark;
+  /* Native scrollbars, form controls and selection render light. */
+  color-scheme: light;
 
-  --ink:        #0c0b0a;
-  --ink-raised: #16130f;
-  --ink-sunk:   #090807;
-  --rule:       #332e28;
-  --rule-soft:  #221e1a;
+  /* ---- IFG brand ----------------------------------------------------
+     Taken from their own assets, not guessed: #f16a22 is the fill in
+     public/ifg-logo.svg, and #355084 / #35b79e / #0b6ca5 are the three most
+     used colours in interfacefinancial.com's stylesheet. */
+  --brand:        #f16a22;   /* logo orange — 3.08:1 on white, so fills only */
+  --brand-deep:   #b54d0e;   /* same hue at 5.21:1, for when it must be type */
+  --brand-wash:   #fef1e9;
+  --navy:         #355084;   /* their navy — 7.98:1, safe for body copy */
+  --navy-deep:    #22375f;
+  --navy-wash:    #eaeff7;
+  --teal:         #35b79e;   /* their accent teal — fills only at 2.49:1 */
+  --sky:          #dfeaf6;
 
-  /* Measured against --ink: 17.60 / 11.09 / 6.28 : 1 — AAA, AAA, AA.
-     The previous --bone-faint (#6b6558) was 3.40:1, below the 4.5:1 AA floor
-     for body text, which is why legends and hints were unreadable. */
-  --bone:       #f6f2e9;
-  --bone-dim:   #c9c2b2;
-  --bone-faint: #99917f;
+  /* ---- surfaces ------------------------------------------------------ */
+  --page:         #f7f9fc;
+  --surface:      #ffffff;
+  --surface-sunk: #eef3f9;
+  --rule:         #d5dfeb;
+  --rule-soft:    #e7edf5;
 
-  --critical:   #ff6152;
-  --high:       #ffab5c;
-  --warn:       #e5c477;
-  --info:       #93aabd;
-  --fund:       #86d3a1;
+  /* ---- type: 7.56 / 6.18 / 4.86 : 1 on --page. AAA, AA, AA. --------- */
+  --text:         #355084;
+  --text-2:       #4a5f7d;
+  --text-3:       #5c6f8a;
 
-  /* Data values carry a touch more weight than prose so figures hold up on dark. */
+  /* Legacy slot names. The whole sheet is written against these, so the theme
+     turns over here rather than in 700 lines of rules. `ink` is the page and
+     `bone` is the type — inverted from the names' origin, aliased rather than
+     renamed so the flip stayed reviewable. */
+  --ink:        var(--page);
+  --ink-raised: var(--surface);
+  --ink-sunk:   var(--surface-sunk);
+  --bone:       var(--navy-deep);
+  --bone-dim:   var(--text-2);
+  --bone-faint: var(--text-3);
+
+  /* Severity, measured on white / on page: 6.62/6.28, 5.84/5.54, 5.67/5.37,
+     6.22/5.89, 6.54/6.20. All AA. Note `high` is a deliberately darkened
+     orange: it must not be mistaken for a brand accent. */
+  --critical:   #b3231b;
+  --high:       #a8480b;
+  --warn:       #7d6414;
+  --info:       #3f6486;
+  --fund:       #0f7a68;   /* their teal, darkened to 4.97:1 */
+
+  /* Figures carry a touch more weight than prose so they hold their column. */
   --data-weight: 500;
 
   --measure: 1280px;
   --step: 8px;
-  --radius: 2px;
+  --radius: 4px;
+  --lift: 0 1px 2px rgba(18, 50, 92, 0.06), 0 8px 24px rgba(18, 50, 92, 0.05);
 }
 
 /* ---------------------------------------------------------------- scrollbars
@@ -67,7 +95,7 @@
   background-clip: content-box;
 }
 
-*::-webkit-scrollbar-thumb:hover { background: var(--bone-faint); background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-3); background-clip: content-box; }
 *::-webkit-scrollbar-corner { background: transparent; }
 
 *,
@@ -93,15 +121,19 @@ body {
   min-height: 100vh;
 }
 
-/* Grain. Paper has tooth; screens should too. Kept light so it never eats text. */
+/* Their site sits on clean white with soft blue geometry rather than texture,
+   so the grain overlay is gone. In its place, one very faint corner wash that
+   echoes the hero illustration without competing with a single figure. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 100;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: -1;
+  background:
+    radial-gradient(58rem 34rem at 88% -8%, var(--sky) 0%, transparent 62%),
+    radial-gradient(42rem 26rem at -6% 4%, var(--brand-wash) 0%, transparent 60%);
+  opacity: 0.75;
 }
 
 h1, h2, h3, .display {
@@ -119,29 +151,50 @@ h1, h2, h3, .display {
 }
 
 :focus-visible {
-  outline: 2px solid var(--bone);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
-/* ---------------------------------------------------------------- masthead */
+/* ---------------------------------------------------------------- masthead
+   Mark on the left, product name on the right, as their own header sets it
+   out. The orange rule under the title echoes the underline on their active
+   nav item. */
 .masthead {
+  /* Pinned. The panel below is already a sticky column, so the header has to
+     hold its own layer or it slides under the card's shadow on scroll. */
+  position: sticky;
+  top: 0;
+  z-index: 20;
   border-bottom: 1px solid var(--rule);
-  padding: calc(var(--step) * 3) calc(var(--step) * 5);
+  padding: calc(var(--step) * 2.5) calc(var(--step) * 5);
+  background: var(--surface);
   display: flex;
-  align-items: baseline;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  gap: calc(var(--step) * 3);
-  flex-wrap: wrap;
-  background: var(--ink-sunk);
+  gap: calc(var(--step) * 4);
 }
 
-.masthead h1 { font-size: 25px; letter-spacing: -0.03em; }
+.brandmark {
+  display: block;
+  width: auto;
+  height: 62px;
+}
 
-.masthead .sub {
-  color: var(--bone-dim);
-  font-size: 13.5px;
-  font-weight: 500;
+/* Deliberately restrained. The logo is the identity here; the product name is
+   a label beside it, so it sits closer to nav scale than to headline scale. */
+.masthead h1 {
+  font-size: 15px;
+  font-weight: 600;
   letter-spacing: 0.01em;
+  color: var(--navy-deep);
+  padding-bottom: calc(var(--step) * 0.75);
+  border-bottom: 2px solid var(--brand);
+}
+
+@media (max-width: 620px) {
+  .masthead { padding-inline: calc(var(--step) * 3); }
+  .brandmark { height: 48px; }
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -152,7 +205,12 @@ h1, h2, h3, .display {
   display: grid;
   grid-template-columns: 404px minmax(0, 1fr);
   gap: calc(var(--step) * 5);
-  align-items: start;
+  /* Deliberately NOT `align-items: start`. That sizes each grid item to its own
+     content, which leaves the sticky panel zero travel — it then scrolled with
+     the page and slid under the pinned header. Stretching the items to the row
+     height gives sticky something to move within; the panel's own max-height
+     stops it growing to fill that height. */
+  align-items: stretch;
 }
 
 @media (max-width: 980px) {
@@ -169,12 +227,17 @@ h1, h2, h3, .display {
    scrollbar next to the page's. */
 .panel {
   position: sticky;
-  top: calc(var(--step) * 3);
+  /* Header height (103) plus a step of air, so the panel parks under it
+     instead of behind it. */
+  top: calc(103px + var(--step) * 2);
   border: 1px solid var(--rule);
   background: var(--ink-raised);
-  /* 150px is the masthead plus page padding. Without it the panel overflows on
-     first paint and clips the primary action below the fold, before the sticky
-     offset has anything to pin against. */
+  border-radius: var(--radius);
+  box-shadow: var(--lift);
+  /* Measured, not guessed: the pinned header is 103px, the sticky offset above
+     the panel is 16px, and 31px is left as bottom air. Without a cap the panel
+     overflows on first paint and clips the primary action below the fold,
+     before the sticky offset has anything to pin against. */
   max-height: calc(100vh - 150px);
   display: flex;
   flex-direction: column;
@@ -232,11 +295,11 @@ h1, h2, h3, .display {
 
 .drop:hover,
 .drop.is-over {
-  border-color: var(--bone-dim);
-  color: var(--bone);
+  border-color: var(--brand);
+  color: var(--navy-deep);
 }
 
-.drop.is-over { background: #1d1913; }
+.drop.is-over { background: var(--brand-wash); }
 
 .drop.has-file {
   border-style: solid;
@@ -365,8 +428,8 @@ details.group[open] > summary::before { content: "\2212"; }
 }
 
 .check input:checked {
-  border-color: var(--bone);
-  background: var(--bone);
+  border-color: var(--brand);
+  background: var(--brand);
 }
 
 .check input:checked::after {
@@ -376,7 +439,7 @@ details.group[open] > summary::before { content: "\2212"; }
   top: 1px;
   width: 5px;
   height: 9px;
-  border: solid var(--ink);
+  border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -410,8 +473,8 @@ textarea.other::placeholder { color: var(--bone-faint); }
 .go {
   width: 100%;
   padding: 14px;
-  background: var(--bone);
-  color: var(--ink);
+  background: var(--navy-deep);
+  color: #fff;
   border: 0;
   font-family: var(--font-text), sans-serif;
   font-weight: 600;
@@ -422,7 +485,7 @@ textarea.other::placeholder { color: var(--bone-faint); }
   transition: opacity 140ms ease;
 }
 
-.go:hover:not(:disabled) { opacity: 0.88; }
+.go:hover:not(:disabled) { background: var(--navy); }
 .go:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .go-note {
@@ -436,6 +499,7 @@ textarea.other::placeholder { color: var(--bone-faint); }
 .verdict {
   border: 1px solid var(--rule);
   background: var(--ink-raised);
+  box-shadow: var(--lift);
   padding: calc(var(--step) * 3.5);
   display: flex;
   align-items: center;
