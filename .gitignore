@@ -3,3 +3,5 @@ dist/
 .env
 .env.local
 packages/control-engine/results.json
+__pycache__/
+*.pyc
