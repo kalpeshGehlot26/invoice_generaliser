@@ -174,7 +174,7 @@ export default function Page() {
             className="other"
             value={other}
             onChange={(e) => setOther(e.target.value)}
-            placeholder={"GSTIN\ndelivery date\napprover name"}
+            placeholder={"CIS deduction\ndelivery date\napprover name"}
           />
           <p className="hint after">Anything not in the list above. Plain English is fine.</p>
         </div>

@@ -6,13 +6,10 @@
 # The platform's hard limits are, and the settings below are chosen against
 # them rather than against the quota:
 #
-#   6 MB    request body, every plan. Base64 leaves ~4.5 MB of usable payload.
-#   60 s    synchronous function timeout, not configurable.
-#   1 GB    function memory. Raising it to 2-4 GB needs a paid plan.
-#
-# NOT YET DEPLOYED. This is a considered starting point, not a verified one —
-# the native-binary bundling in [functions] is the part most likely to need a
-# second pass after the first real deploy.
+#   6 MB     request body, every plan. Base64 leaves ~4.5 MB of usable payload.
+#   60 s     synchronous function timeout, not configurable.
+#   1 GB     function memory. Raising it to 2-4 GB needs a paid plan.
+#   250 MB   function bundle, unzipped. This one bit us — see below.
 
 [build]
   # The repo root, so npm installs the whole workspace: apps/web depends on
@@ -25,8 +22,8 @@
   NODE_VERSION = "22"
   # Keep the wire payload under Netlify's 6 MB cap with room for base64
   # expansion. The app's own default is 25 MB, which a function can never
-  # receive here — better to refuse at the edge with a clear message than to
-  # have the platform drop the request.
+  # receive here — better to refuse in our own code with a clear message than
+  # to have the platform drop the request.
   INVOICE_MAX_UPLOAD_BYTES = "4000000"
   # Each page is rasterised and sent to the vision model. Twenty pages will not
   # finish inside 60 seconds at 1 GB, and the retained base64 data URLs are the
@@ -37,14 +34,32 @@
   package = "@netlify/plugin-nextjs"
 
 [functions]
-  # pdf-to-img rasterises through @napi-rs/canvas, which is a prebuilt native
-  # addon. Netlify's bundler traces JS imports and will not follow a .node file,
-  # so it has to be named explicitly or PDF upload fails at runtime with a
-  # module-not-found while image upload keeps working — a confusing half-outage.
-  included_files = ["**/*.node"]
-  external_node_modules = ["@napi-rs/canvas", "pdf-to-img"]
+  # pdf-to-img rasterises through `canvas` (node-canvas) 3.1.0 — NOT
+  # @napi-rs/canvas, which an earlier version of this file named and which is
+  # not installed at all. node-canvas ships a prebuilt canvas.node plus its own
+  # cairo / pango / freetype / harfbuzz stack as 25 .so files in build/Release,
+  # about 23 MB together. Netlify's bundler traces JS imports and follows none
+  # of that, so it is named here explicitly. Get this wrong and PDF upload fails
+  # at runtime with a module-not-found while image upload keeps working — a
+  # confusing half-outage.
+  #
+  # Scoped to that one directory deliberately. A "**/*.node" glob looks
+  # equivalent and is not: it also matches @next/swc-linux-x64-gnu and -musl at
+  # 136 MB each, which pushed the bundle past the 250 MB unzipped ceiling and
+  # failed the deploy outright. 561 MB of .node files sit in this tree; exactly
+  # 23 MB of them belong in the function.
+  included_files = [
+    "node_modules/canvas/build/Release/**",
+    "!node_modules/@next/swc-*/**",
+    "!**/*.map",
+  ]
+  external_node_modules = ["canvas", "pdf-to-img", "pdfjs-dist"]
 
 # OPENROUTER_API_KEY is deliberately absent: set it in the Netlify UI as a
-# secret. It is read server-side inside the function, so it never reaches the
-# client bundle — that separation is already enforced by the @invoice/extract
-# subpath exports and should not be weakened by putting the key in this file.
+# secret, or with `netlify env:set`. It is read server-side inside the function,
+# so it never reaches the client bundle — a separation the @invoice/extract
+# subpath exports already enforce, and which putting the key here would weaken.
+#
+# Note that next.config.mjs reads a root .env at BUILD time only. That does not
+# carry into the deployed function's runtime environment, so the key genuinely
+# has to be set on the site.

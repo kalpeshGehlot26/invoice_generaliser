@@ -1,6 +1,8 @@
 "use client";
 
 import type { ControlResult, Finding, Invoice } from "@ifg/control-engine";
+import { SEVERITY_WEIGHT } from "@ifg/control-engine/route";
+import { getFieldByKey } from "@invoice/extract/fields";
 
 export interface ProcessResponse {
   invoice: Invoice;
@@ -117,31 +119,110 @@ function Findings({ findings }: { findings: Finding[] }) {
   );
 }
 
-function Canonical({ invoice }: { invoice: Invoice }) {
-  const rows: Array<[string, string | number | null | undefined]> = [
-    ["Invoice number", invoice.invoice_number],
-    ["PO number", invoice.po_number],
-    ["Clearance ID", invoice.clearance_id],
-    ["Issue date", invoice.issue_date],
-    ["Due date", invoice.due_date],
-    ["Payment terms (days)", invoice.payment_terms_days],
-    ["Currency", invoice.currency],
-    ["Seller", invoice.seller?.name],
-    ["Seller country", invoice.seller?.country],
-    ["Seller tax ID", invoice.seller?.vat_id],
-    ["Seller account", invoice.seller?.iban],
+interface FieldRisk {
+  points: number;
+  severity: Finding["severity"];
+  codes: string[];
+}
+
+/**
+ * Price each field by the findings that name it.
+ *
+ * Every finding already carries the field paths it implicates, so a per-field
+ * score is a regrouping of the total rather than a new judgement: the points
+ * here sum to the document's risk score, minus the findings that name no field
+ * at all (EXTRACTION_UNVERIFIED being the usual one). Weights come from the
+ * engine, not from a copy of them, so the badge can never drift from the score
+ * it is decomposing.
+ */
+function fieldRisk(findings: Finding[]): Map<string, FieldRisk> {
+  const map = new Map<string, FieldRisk>();
+
+  for (const f of findings) {
+    const weight = SEVERITY_WEIGHT[f.severity];
+    for (const path of f.fields) {
+      const existing = map.get(path);
+      if (!existing) {
+        map.set(path, { points: weight, severity: f.severity, codes: [f.code] });
+        continue;
+      }
+      existing.points += weight;
+      existing.codes.push(f.code);
+      // Keep the worst severity for the colour: a field with a critical and a
+      // warning against it is a critical field.
+      if (weight > SEVERITY_WEIGHT[existing.severity]) existing.severity = f.severity;
+    }
+  }
+
+  return map;
+}
+
+/** Lookup that also covers a line row, whose findings are keyed `line[n].field`. */
+function riskFor(risk: Map<string, FieldRisk>, path: string | undefined): FieldRisk | null {
+  if (!path) return null;
+  const direct = risk.get(path);
+  if (direct) return direct;
+
+  // A row-level badge aggregates every finding against that row.
+  const prefix = `${path}.`;
+  let total: FieldRisk | null = null;
+  for (const [key, value] of risk) {
+    if (!key.startsWith(prefix)) continue;
+    if (!total) {
+      total = { points: 0, severity: value.severity, codes: [] };
+    }
+    total.points += value.points;
+    total.codes.push(...value.codes);
+    if (SEVERITY_WEIGHT[value.severity] > SEVERITY_WEIGHT[total.severity]) {
+      total.severity = value.severity;
+    }
+  }
+  return total;
+}
+
+function Score({ risk }: { risk: FieldRisk | null }) {
+  // A clean field shows a dash rather than a zero: zero risk and "no control
+  // looked at this field" are different states, and only the reviewer can tell
+  // which matters. The dash keeps the column aligned without asserting either.
+  if (!risk) return <span className="score-nil" aria-hidden="true">&mdash;</span>;
+
+  return (
+    <span
+      className="score-chip"
+      style={{ color: SEVERITY_COLOUR[risk.severity], borderColor: SEVERITY_COLOUR[risk.severity] }}
+      title={`${risk.points} risk points from ${risk.codes.join(", ")}`}
+    >
+      {risk.points}
+    </span>
+  );
+}
+
+function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, FieldRisk> }) {
+  // Third element is the engine's own field path, which is what findings name.
+  const rows: Array<[string, string | number | null | undefined, string?]> = [
+    ["Invoice number", invoice.invoice_number, "invoice_number"],
+    ["PO number", invoice.po_number, "po_number"],
+    ["Clearance ID", invoice.clearance_id, "clearance_id"],
+    ["Issue date", invoice.issue_date, "issue_date"],
+    ["Due date", invoice.due_date, "due_date"],
+    ["Payment terms (days)", invoice.payment_terms_days, "payment_terms_days"],
+    ["Currency", invoice.currency, "currency"],
+    ["Seller", invoice.seller?.name, "seller.name"],
+    ["Seller country", invoice.seller?.country, "seller.country"],
+    ["Seller tax ID", invoice.seller?.vat_id, "seller.vat_id"],
+    ["Seller account", invoice.seller?.iban, "seller.iban"],
     ["Supplier ID (resolved)", invoice.seller?.supplier_id],
-    ["Buyer", invoice.buyer?.name],
-    ["Buyer country", invoice.buyer?.country],
-    ["Buyer tax ID", invoice.buyer?.vat_id],
-    ["Payee", invoice.payee?.name],
-    ["Payee account", invoice.payee?.iban],
-    ["Subtotal", money(invoice.subtotal)],
-    ["Tax rate", invoice.tax_rate === null || invoice.tax_rate === undefined ? null : `${invoice.tax_rate}%`],
-    ["Tax amount", money(invoice.tax_amount)],
-    ["Discount", money(invoice.discount)],
-    ["Freight", money(invoice.freight)],
-    ["Total due", money(invoice.total_due)],
+    ["Buyer", invoice.buyer?.name, "buyer.name"],
+    ["Buyer country", invoice.buyer?.country, "buyer.country"],
+    ["Buyer tax ID", invoice.buyer?.vat_id, "buyer.vat_id"],
+    ["Payee", invoice.payee?.name, "payee.name"],
+    ["Payee account", invoice.payee?.iban, "payee.iban"],
+    ["Subtotal", money(invoice.subtotal), "subtotal"],
+    ["Tax rate", invoice.tax_rate === null || invoice.tax_rate === undefined ? null : `${invoice.tax_rate}%`, "tax_rate"],
+    ["Tax amount", money(invoice.tax_amount), "tax_amount"],
+    ["Discount", money(invoice.discount), "discount"],
+    ["Freight", money(invoice.freight), "freight"],
+    ["Total due", money(invoice.total_due), "total_due"],
     ["Content hash", invoice.content_hash],
   ];
 
@@ -149,8 +230,11 @@ function Canonical({ invoice }: { invoice: Invoice }) {
     <>
       <table className="data">
         <tbody>
-          {rows.map(([label, value]) => (
+          {rows.map(([label, value, path]) => (
             <tr key={label}>
+              <td className="score-cell">
+                <Score risk={riskFor(risk, path)} />
+              </td>
               <td>{label}</td>
               <td>
                 <Cell value={value} />
@@ -170,6 +254,9 @@ function Canonical({ invoice }: { invoice: Invoice }) {
             <tbody>
               {invoice.line_items!.map((li, i) => (
                 <tr key={i}>
+                  <td className="score-cell">
+                    <Score risk={riskFor(risk, `line[${i + 1}]`)} />
+                  </td>
                   <td>
                     <Cell value={li.description} />
                   </td>
@@ -189,6 +276,7 @@ function Canonical({ invoice }: { invoice: Invoice }) {
 
 export default function Results({ data }: { data: ProcessResponse }) {
   const { control, invoice, requested } = data;
+  const risk = fieldRisk(control.findings);
 
   return (
     <div>
@@ -200,6 +288,7 @@ export default function Results({ data }: { data: ProcessResponse }) {
           </div>
           {requested.map((r) => (
             <div key={r.key} className={`req ${r.status}`}>
+              <Score risk={riskFor(risk, getFieldByKey(r.key)?.path)} />
               <span className="status">{r.status.replace("_", " ")}</span>
               <span>
                 <span className="key">{r.key}</span>
@@ -217,7 +306,7 @@ export default function Results({ data }: { data: ProcessResponse }) {
           <h2>Canonical data</h2>
           <span className="count">as read from the document</span>
         </div>
-        <Canonical invoice={invoice} />
+        <Canonical invoice={invoice} risk={risk} />
       </div>
 
       <div className="block">

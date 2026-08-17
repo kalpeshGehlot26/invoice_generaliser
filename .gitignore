@@ -8,3 +8,6 @@ __pycache__/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify

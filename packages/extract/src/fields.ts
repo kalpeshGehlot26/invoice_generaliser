@@ -23,13 +23,13 @@ export const FIELD_CATALOG: FieldDescriptor[] = [
 
   { key: "seller_name", label: "Seller name", group: "Seller", description: "Party issuing the invoice" , path: "seller.name" },
   { key: "seller_country", label: "Seller country", group: "Seller", description: "Country of the seller" , path: "seller.country" },
-  { key: "seller_vat_id", label: "Seller tax ID", group: "Seller", description: "VAT number, GSTIN, ABN or equivalent" , path: "seller.vat_id" },
+  { key: "seller_vat_id", label: "Seller tax ID", group: "Seller", description: "VAT number, ABN, or local tax registration" , path: "seller.vat_id" },
   { key: "seller_iban", label: "Seller bank account", group: "Seller", description: "IBAN or account details for the seller" , path: "seller.iban" },
   { key: "seller_address", label: "Seller address", group: "Seller", description: "Full postal address" , path: "seller.address" },
 
   { key: "buyer_name", label: "Buyer name", group: "Buyer", description: "Party being billed" , path: "buyer.name" },
   { key: "buyer_country", label: "Buyer country", group: "Buyer", description: "Country of the buyer" , path: "buyer.country" },
-  { key: "buyer_vat_id", label: "Buyer tax ID", group: "Buyer", description: "VAT number, GSTIN or equivalent" , path: "buyer.vat_id" },
+  { key: "buyer_vat_id", label: "Buyer tax ID", group: "Buyer", description: "VAT number, ABN, or local tax registration" , path: "buyer.vat_id" },
   { key: "buyer_address", label: "Buyer address", group: "Buyer", description: "Full postal address" , path: "buyer.address" },
 
   { key: "payee_name", label: "Payee name", group: "Payee", description: "Named payee, when different from the seller" , path: "payee.name" },

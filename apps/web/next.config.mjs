@@ -34,7 +34,9 @@ const nextConfig = {
   outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)).replace(/\/apps\/web$/, ""),
   // pdf-to-img pulls in @napi-rs/canvas, which ships prebuilt native binaries.
   // It must stay external to the bundler and run only on the server.
-  serverExternalPackages: ["pdf-to-img", "@napi-rs/canvas"],
+  // `canvas` is node-canvas, the native rasteriser pdf-to-img depends on.
+  // It must stay external: bundling a native addon breaks its .node loading.
+  serverExternalPackages: ["pdf-to-img", "canvas", "pdfjs-dist"],
   transpilePackages: ["@invoice/extract", "@ifg/control-engine"],
   webpack: (config) => {
     // The workspace packages are ESM TypeScript source using explicit `.js`

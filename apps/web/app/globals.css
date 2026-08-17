@@ -817,3 +817,45 @@ pre.json {
 }
 
 .scale b { color: var(--bone-dim); font-weight: 600; }
+
+/* -------------------------------------------------------------- field score
+   Each field priced by the findings that name it. This is a regrouping of the
+   risk score, not a second opinion: the weights come from the engine's own
+   SEVERITY_WEIGHT, so a badge cannot disagree with the total it decomposes.
+
+   A clean field gets a dash, not a zero. "No control objected" and "a control
+   looked and found nothing" are different states, and a 0 would assert the
+   second when only the first is known. */
+.score-cell {
+  width: 1%;
+  white-space: nowrap;
+  padding-right: calc(var(--step) * 1.5) !important;
+  vertical-align: top;
+}
+
+.score-chip {
+  display: inline-block;
+  min-width: 30px;
+  padding: 1px 6px;
+  border: 1px solid;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.score-nil {
+  display: inline-block;
+  min-width: 30px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--rule);
+}
+
+/* In the requested list the badge leads the row, so it needs the same gutter
+   the status pill has. */
+.req > .score-chip,
+.req > .score-nil { margin-right: calc(var(--step) * 1.25); flex: none; }
