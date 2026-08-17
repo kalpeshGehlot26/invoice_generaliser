@@ -28,6 +28,10 @@ loadRootEnv();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // There is an unrelated package-lock.json in the parent directory, outside
+  // this repo. Without pinning the root, Next infers it as the workspace root
+  // and file tracing reaches outside the project.
+  outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)).replace(/\/apps\/web$/, ""),
   // pdf-to-img pulls in @napi-rs/canvas, which ships prebuilt native binaries.
   // It must stay external to the bundler and run only on the server.
   serverExternalPackages: ["pdf-to-img", "@napi-rs/canvas"],

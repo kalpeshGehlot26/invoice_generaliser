@@ -70,6 +70,8 @@ carry several money columns (for example Amount, Fee, Total). Read the row's tot
 not its first column. Getting this wrong makes the line items fail to sum to the \
 subtotal, which reports a correct invoice as arithmetically broken.
 
+6c. A dash, em-dash, blank cell or "N/A" in a quantity or price column means null, not 0. Lump-sum rows legitimately have no quantity.
+
 6b. qty and unit_price are read, never derived. If the row does not print a \
 quantity, qty is null. If it does not print a unit price, unit_price is null. \
 NEVER pick a qty and unit_price pair because they multiply out to the total — \

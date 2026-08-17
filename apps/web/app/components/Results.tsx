@@ -73,6 +73,13 @@ function Verdict({ control }: { control: ControlResult }) {
             Info <b>{control.info}</b>
           </span>
         </div>
+        <p className="scale">
+          Score is a sum of finding weights — info 0, warn 8, high 30, critical 100 —
+          with no upper bound. It is the bands that decide:{" "}
+          <b>0</b> auto-fund &middot; <b>1&ndash;29</b> light review &middot;{" "}
+          <b>30+ or two highs</b> review &middot; <b>any critical</b> blocks regardless
+          of score.
+        </p>
       </div>
     </div>
   );
@@ -185,18 +192,8 @@ export default function Results({ data }: { data: ProcessResponse }) {
 
   return (
     <div>
-      <Verdict control={control} />
-
-      <div className="block">
-        <div className="block-head">
-          <h2>Findings</h2>
-          <span className="count">{control.findings.length} raised</span>
-        </div>
-        <Findings findings={control.findings} />
-      </div>
-
       {requested.length > 0 && (
-        <div className="block">
+        <div className="block first">
           <div className="block-head">
             <h2>Requested fields</h2>
             <span className="count">{requested.length} asked for</span>
@@ -215,12 +212,33 @@ export default function Results({ data }: { data: ProcessResponse }) {
         </div>
       )}
 
-      <div className="block">
+      <div className={`block${requested.length === 0 ? " first" : ""}`}>
         <div className="block-head">
           <h2>Canonical data</h2>
           <span className="count">as read from the document</span>
         </div>
         <Canonical invoice={invoice} />
+      </div>
+
+      <div className="block">
+        <div className="block-head">
+          <h2>Raw output</h2>
+          <span className="count">exactly what a consuming system receives</span>
+        </div>
+        <pre className="json">{JSON.stringify(data, null, 2)}</pre>
+      </div>
+
+      <div className="block">
+        <div className="block-head">
+          <h2>Review</h2>
+          <span className="count">
+            {control.findings.length} finding{control.findings.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        <Verdict control={control} />
+        <div style={{ marginTop: 24 }}>
+          <Findings findings={control.findings} />
+        </div>
       </div>
 
       <div className="block">
@@ -241,14 +259,6 @@ export default function Results({ data }: { data: ProcessResponse }) {
             ))}
           </ul>
         </div>
-      </div>
-
-      <div className="block">
-        <div className="block-head">
-          <h2>Raw output</h2>
-          <span className="count">exactly what a consuming system receives</span>
-        </div>
-        <pre className="json">{JSON.stringify(data, null, 2)}</pre>
       </div>
     </div>
   );

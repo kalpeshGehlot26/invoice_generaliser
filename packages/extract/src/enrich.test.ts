@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { VENDOR_MASTER } from "@ifg/control-engine";
-import { cleanString, toInvoice } from "./enrich.js";
+import { cleanString, sanitiseCharge, toInvoice } from "./enrich.js";
 import type { ExtractedInvoice } from "./schema.js";
 
 const BYTES = new Uint8Array([1, 2, 3, 4]);
@@ -74,5 +74,35 @@ describe("toInvoice null-ish coercion", () => {
   it("trims whitespace from extracted identifiers", () => {
     const inv = toInvoice(bare({ invoice_number: "  NW-2026-08-1207  " }), ctx);
     expect(inv.invoice_number).toBe("NW-2026-08-1207");
+  });
+});
+
+describe("sanitiseCharge", () => {
+  it("keeps a genuine per-line fee", () => {
+    // Amount 10,000 + Fee 25 = Total 10,025
+    expect(sanitiseCharge(25, 1, 10000, 10025)).toBe(25);
+  });
+
+  it("rejects a charge equal to the row total", () => {
+    // Observed: the model copied the Total column into charge as well, making
+    // line arithmetic expect 60*80 + 5832 instead of 60*80.
+    expect(sanitiseCharge(5832, 60, 80, 5832)).toBeNull();
+  });
+
+  it("rejects a charge larger than the row total", () => {
+    expect(sanitiseCharge(9999, 1, 100, 100)).toBeNull();
+  });
+
+  it("rejects a charge that makes the row reconcile worse", () => {
+    // 4 x 25 = 100 already equals the total; adding 10 moves it away.
+    expect(sanitiseCharge(10, 4, 25, 100)).toBeNull();
+  });
+
+  it("treats zero as absent", () => {
+    expect(sanitiseCharge(0, 1, 10, 10)).toBeNull();
+  });
+
+  it("keeps a charge when the row has no qty or unit price to check against", () => {
+    expect(sanitiseCharge(25, null, null, 10025)).toBe(25);
   });
 });

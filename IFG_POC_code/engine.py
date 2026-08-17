@@ -158,6 +158,11 @@ def v_line_arithmetic(inv: dict) -> list[Finding]:
         expect = round((li.get("qty") or 0) * (li.get("unit_price") or 0)
                        + (li.get("charge") or 0), 2)
         got = li.get("line_total")
+        # A lump-sum row prints no quantity or no unit price. There is nothing to
+        # multiply, so asserting "qty x unit_price = 0.00" against a real total
+        # invents a discrepancy that is not on the document.
+        if li.get("qty") is None or li.get("unit_price") is None:
+            continue
         if got is None:
             out.append(Finding("LINE_MISSING_TOTAL", "warn",
                                f"Line {i} has no line_total.",

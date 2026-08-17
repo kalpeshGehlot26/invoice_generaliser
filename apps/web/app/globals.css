@@ -730,3 +730,18 @@ pre.json {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* First block after the panel needs no top gap. */
+.block.first { margin-top: 0; }
+
+/* The score has no denominator — it is an unbounded sum of finding weights — so
+   the bands are what give the number meaning. */
+.scale {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--bone-faint);
+  max-width: 74ch;
+}
+
+.scale b { color: var(--bone-dim); font-weight: 600; }

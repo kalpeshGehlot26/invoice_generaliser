@@ -20,6 +20,40 @@ const NULLISH = new Set([
   "not specified", "not applicable", "not present", "unknown", "undefined", "",
 ]);
 
+/**
+ * A per-line charge is only meaningful if it is a *part* of the row total.
+ *
+ * Observed: on a table with an empty "Tax" column, the model copied the row's
+ * Total into `charge` as well as `line_total`. Line arithmetic then computed
+ * qty * unit_price + charge and reported an expectation of 10,632 where the
+ * honest figure was 4,800 — corrupting the numbers in a finding that was
+ * otherwise a true positive.
+ *
+ * Deterministic guard: a charge at or above the row total, or one that makes the
+ * row reconcile worse than ignoring it, is a misread and becomes null. This
+ * never suppresses a real fee, which is by definition smaller than the total.
+ */
+export function sanitiseCharge(
+  charge: number | null | undefined,
+  qty: number | null | undefined,
+  unitPrice: number | null | undefined,
+  lineTotal: number | null | undefined,
+): number | null {
+  if (charge === null || charge === undefined || charge === 0) return null;
+  if (lineTotal === null || lineTotal === undefined) return charge;
+
+  // A fee cannot be the whole row.
+  if (Math.abs(charge) >= Math.abs(lineTotal)) return null;
+
+  // If including it moves the row further from its printed total, it is not a fee.
+  if (qty !== null && qty !== undefined && unitPrice !== null && unitPrice !== undefined) {
+    const base = qty * unitPrice;
+    if (Math.abs(base + charge - lineTotal) > Math.abs(base - lineTotal)) return null;
+  }
+
+  return charge;
+}
+
 /** Coerce absent-meaning text to a real null. Also trims. */
 export function cleanString(value: string | null | undefined): string | null {
   if (value === null || value === undefined) return null;
@@ -117,7 +151,7 @@ export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invo
       qty: li.qty,
       uom: cleanString(li.uom),
       unit_price: li.unit_price,
-      charge: li.charge,
+      charge: sanitiseCharge(li.charge, li.qty, li.unit_price, li.line_total),
       line_total: li.line_total,
       tax_rate: li.tax_rate,
       tax_category: cleanString(li.tax_category),

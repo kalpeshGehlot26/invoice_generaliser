@@ -13,6 +13,13 @@ export function vLineArithmetic(inv: Invoice): Finding[] {
     const expect = pyRound((li.qty || 0) * (li.unit_price || 0) + (li.charge || 0), 2);
     const got = li.line_total;
 
+    // A lump-sum row prints no quantity or no unit price. There is nothing to
+    // multiply, so asserting "qty x unit_price = 0.00" against a real total
+    // invents a discrepancy that is not on the document.
+    if (li.qty === null || li.qty === undefined || li.unit_price === null || li.unit_price === undefined) {
+      return;
+    }
+
     if (got === null || got === undefined) {
       out.push({
         code: "LINE_MISSING_TOTAL",
