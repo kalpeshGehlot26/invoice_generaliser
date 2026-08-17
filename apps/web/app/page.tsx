@@ -9,17 +9,28 @@ import Results, { type ProcessResponse } from "./components/Results";
 
 const GROUPS = fieldGroups();
 
-const DEFAULT_TICKED = new Set([
+/** What a funding decision actually needs, ticked on arrival. */
+const COMMON = [
   "invoice_number",
-  "total_due",
-  "currency",
   "issue_date",
+  "due_date",
+  "currency",
+  "total_due",
+  "tax_amount",
   "seller_name",
-]);
+  "seller_vat_id",
+  "buyer_name",
+  "po_number",
+];
+
+const ALL_KEYS = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
+
+/** Groups open on first load; the rest collapse to keep the panel scannable. */
+const OPEN_BY_DEFAULT = new Set(["Document", "Amounts"]);
 
 export default function Page() {
   const [file, setFile] = useState<File | null>(null);
-  const [ticked, setTicked] = useState<Set<string>>(new Set(DEFAULT_TICKED));
+  const [ticked, setTicked] = useState<Set<string>>(new Set(COMMON));
   const [other, setOther] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,26 +120,51 @@ export default function Page() {
         </div>
 
         <div className="panel-section">
-          <div className="legend">Fields you require</div>
-          <p className="hint" style={{ marginTop: 0, marginBottom: 12 }}>
+          <div className="legend">
+            Fields you require &nbsp;&middot;&nbsp; {ticked.size} of {ALL_KEYS.length}
+          </div>
+          <p className="hint">
             Everything readable is always extracted. Ticking a field guarantees an explicit
             answer for it &mdash; found, not present, or unreadable.
           </p>
-          {GROUPS.map(({ group, fields }) => (
-            <div className="group" key={group}>
-              <div className="group-name">{group}</div>
-              {fields.map((f) => (
-                <label className="check" key={f.key} title={f.description}>
-                  <input
-                    type="checkbox"
-                    checked={ticked.has(f.key)}
-                    onChange={() => toggle(f.key)}
-                  />
-                  <span>{f.label}</span>
-                </label>
-              ))}
-            </div>
-          ))}
+
+          <div className="presets">
+            <button type="button" className="preset" onClick={() => setTicked(new Set(COMMON))}>
+              Common
+            </button>
+            <button type="button" className="preset" onClick={() => setTicked(new Set(ALL_KEYS))}>
+              All
+            </button>
+            <button type="button" className="preset" onClick={() => setTicked(new Set())}>
+              None
+            </button>
+          </div>
+
+          {GROUPS.map(({ group, fields }) => {
+            const active = fields.filter((f) => ticked.has(f.key)).length;
+            return (
+              <details className="group" key={group} open={OPEN_BY_DEFAULT.has(group)}>
+                <summary>
+                  {group}
+                  <span className={`group-count${active > 0 ? " active" : ""}`}>
+                    {active}/{fields.length}
+                  </span>
+                </summary>
+                <div className="group-body">
+                  {fields.map((f) => (
+                    <label className="check" key={f.key} title={f.description}>
+                      <input
+                        type="checkbox"
+                        checked={ticked.has(f.key)}
+                        onChange={() => toggle(f.key)}
+                      />
+                      <span>{f.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+            );
+          })}
         </div>
 
         <div className="panel-section">
@@ -139,13 +175,14 @@ export default function Page() {
             onChange={(e) => setOther(e.target.value)}
             placeholder={"GSTIN\ndelivery date\napprover name"}
           />
-          <p className="hint">Anything not in the list above. Plain English is fine.</p>
+          <p className="hint after">Anything not in the list above. Plain English is fine.</p>
         </div>
 
         <div className="panel-section">
           <button className="go" onClick={submit} disabled={!file || busy}>
             {busy ? <span className="working">Reading document&hellip;</span> : "Process invoice"}
           </button>
+          {!file && <p className="go-note">Add a document to begin</p>}
         </div>
       </aside>
 
@@ -153,6 +190,13 @@ export default function Page() {
         {error && (
           <div className="error">
             <strong>{error}</strong>
+            {error.includes("OPENROUTER_API_KEY") && (
+              <p>
+                Extraction needs an OpenRouter key. Add{" "}
+                <code>OPENROUTER_API_KEY=&hellip;</code> to <code>.env</code> at the repo
+                root and restart the server.
+              </p>
+            )}
           </div>
         )}
 
@@ -160,17 +204,37 @@ export default function Page() {
           <div className="empty">
             <div className="display">Nothing loaded</div>
             <p>
-              Upload an invoice. It is extracted to one canonical shape, then put through
-              34 deterministic controls &mdash; arithmetic, tax, identity, duplicate
-              financing &mdash; and returned with a funding decision.
+              Upload an invoice &mdash; a clean vendor PDF, a scan, or a photograph taken on
+              a phone. All three take the same path.
             </p>
+            <ol className="steps">
+              <li>
+                <span className="n">1</span>
+                <span>Pages are rasterised, so tables and columns keep their layout.</span>
+              </li>
+              <li>
+                <span className="n">2</span>
+                <span>Fields are read into one canonical shape. Nothing is repaired or inferred.</span>
+              </li>
+              <li>
+                <span className="n">3</span>
+                <span>
+                  34 deterministic controls run &mdash; arithmetic, tax, identity, duplicate
+                  financing.
+                </span>
+              </li>
+              <li>
+                <span className="n">4</span>
+                <span>You get findings, a risk score, and a funding decision.</span>
+              </li>
+            </ol>
           </div>
         )}
 
         {busy && (
           <div className="empty">
             <div className="display working">Reading document</div>
-            <p>Rasterising pages, extracting fields, running controls.</p>
+            <p>Rasterising pages, extracting fields, running controls. This takes a few seconds.</p>
           </div>
         )}
 
