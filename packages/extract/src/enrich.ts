@@ -6,6 +6,28 @@ const norm = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
+ * Strings that mean "absent" but arrive as text.
+ *
+ * Observed in practice: GPT returned the four-character string "null" for a
+ * clearance_id that was not on the document. The schema accepts it, because
+ * "null" is a valid string — but downstream every truthiness check then reads
+ * the field as present. For clearance_id specifically that would turn a
+ * missing state attestation into an apparently attested invoice, which is the
+ * exact silent corruption the control layer exists to catch.
+ */
+const NULLISH = new Set([
+  "null", "nil", "none", "n/a", "na", "n.a.", "-", "--", "–", "—",
+  "not specified", "not applicable", "not present", "unknown", "undefined", "",
+]);
+
+/** Coerce absent-meaning text to a real null. Also trims. */
+export function cleanString(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim();
+  return NULLISH.has(trimmed.toLowerCase()) ? null : trimmed;
+}
+
+/**
  * `supplier_id` is a master-data join key, not something readable off the page.
  * Resolve it by tax ID first (exact identity), then by normalised name.
  *
@@ -55,44 +77,49 @@ export interface EnrichContext {
  * silently disable the tier gates that exist to catch bad extraction.
  */
 export function toInvoice(extracted: ExtractedInvoice, ctx: EnrichContext): Invoice {
-  const payeeNamed = Boolean(extracted.payee?.name || extracted.payee?.iban);
+  // Computed on cleaned values: a payee of {name: "null"} must not count as named.
+  const payeeNamed = Boolean(
+    cleanString(extracted.payee?.name) || cleanString(extracted.payee?.iban),
+  );
 
   return {
     doc_id: ctx.docId,
     label: ctx.label ?? "",
     source_channel: ctx.sourceChannel,
-    invoice_number: extracted.invoice_number,
-    clearance_id: extracted.clearance_id,
-    issue_date: extracted.issue_date,
-    due_date: extracted.due_date,
+    invoice_number: cleanString(extracted.invoice_number),
+    clearance_id: cleanString(extracted.clearance_id),
+    issue_date: cleanString(extracted.issue_date),
+    due_date: cleanString(extracted.due_date),
     payment_terms_days: extracted.payment_terms_days,
-    currency: extracted.currency,
+    currency: cleanString(extracted.currency),
     seller: {
       supplier_id: resolveSupplierId(extracted.seller, ctx.master),
-      name: extracted.seller.name,
-      country: extracted.seller.country,
-      vat_id: extracted.seller.vat_id,
-      iban: extracted.seller.iban,
-      address: extracted.seller.address,
+      name: cleanString(extracted.seller.name),
+      country: cleanString(extracted.seller.country),
+      vat_id: cleanString(extracted.seller.vat_id),
+      iban: cleanString(extracted.seller.iban),
+      address: cleanString(extracted.seller.address),
     },
     buyer: {
-      name: extracted.buyer.name,
-      country: extracted.buyer.country,
-      vat_id: extracted.buyer.vat_id,
-      address: extracted.buyer.address,
+      name: cleanString(extracted.buyer.name),
+      country: cleanString(extracted.buyer.country),
+      vat_id: cleanString(extracted.buyer.vat_id),
+      address: cleanString(extracted.buyer.address),
     },
     // An absent payee must stay absent. Defaulting it to the seller would
     // permanently silence PAYEE_NOT_SELLER, the duplicate-financing sensor.
-    payee: payeeNamed ? { name: extracted.payee.name, iban: extracted.payee.iban } : null,
-    po_number: extracted.po_number,
+    payee: payeeNamed
+      ? { name: cleanString(extracted.payee.name), iban: cleanString(extracted.payee.iban) }
+      : null,
+    po_number: cleanString(extracted.po_number),
     line_items: extracted.line_items.map((li) => ({
-      description: li.description,
+      description: cleanString(li.description),
       qty: li.qty,
-      uom: li.uom,
+      uom: cleanString(li.uom),
       unit_price: li.unit_price,
       line_total: li.line_total,
       tax_rate: li.tax_rate,
-      tax_category: li.tax_category,
+      tax_category: cleanString(li.tax_category),
     })),
     subtotal: extracted.subtotal,
     tax_rate: extracted.tax_rate,

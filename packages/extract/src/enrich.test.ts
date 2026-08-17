@@ -1,0 +1,78 @@
+import { describe, expect, it } from "vitest";
+import { VENDOR_MASTER } from "@ifg/control-engine";
+import { cleanString, toInvoice } from "./enrich.js";
+import type { ExtractedInvoice } from "./schema.js";
+
+const BYTES = new Uint8Array([1, 2, 3, 4]);
+const ctx = {
+  docId: "D1",
+  bytes: BYTES,
+  sourceChannel: "portal_upload",
+  master: VENDOR_MASTER,
+};
+
+const bare = (over: Partial<ExtractedInvoice> = {}): ExtractedInvoice => ({
+  invoice_number: "X-1",
+  clearance_id: null,
+  issue_date: null,
+  due_date: null,
+  payment_terms_days: null,
+  currency: "EUR",
+  seller: { name: "S", country: "DE", vat_id: null, iban: null, address: null },
+  buyer: { name: "B", country: "DE", vat_id: null, address: null },
+  payee: { name: null, iban: null },
+  po_number: null,
+  line_items: [],
+  subtotal: null,
+  tax_rate: null,
+  tax_amount: null,
+  discount: null,
+  freight: null,
+  total_due: null,
+  ...over,
+});
+
+describe("cleanString", () => {
+  it.each(["null", "NULL", " none ", "N/A", "-", "—", "not specified", "unknown", ""])(
+    "coerces %o to null",
+    (v) => {
+      expect(cleanString(v)).toBeNull();
+    },
+  );
+
+  it("keeps real values and trims them", () => {
+    expect(cleanString("  INV-1 ")).toBe("INV-1");
+  });
+
+  it("does not eat values that merely contain a null-ish word", () => {
+    expect(cleanString("Nullimex Trading GmbH")).toBe("Nullimex Trading GmbH");
+    expect(cleanString("None-Stop Logistics")).toBe("None-Stop Logistics");
+  });
+});
+
+describe("toInvoice null-ish coercion", () => {
+  it('turns a "null" string clearance_id into a real null', () => {
+    // Observed from GPT on a real document with no clearance identifier. Left
+    // as-is, every truthiness check downstream reads it as present, turning a
+    // missing state attestation into an apparently attested invoice.
+    const inv = toInvoice(bare({ clearance_id: "null" }), ctx);
+    expect(inv.clearance_id).toBeNull();
+  });
+
+  it('does not create a phantom payee from "null" strings', () => {
+    const inv = toInvoice(bare({ payee: { name: "null", iban: "N/A" } }), ctx);
+    // A phantom payee would fire PAYEE_NOT_SELLER on every clean invoice,
+    // making the duplicate-financing sensor useless through noise.
+    expect(inv.payee).toBeNull();
+  });
+
+  it("still records a genuinely named payee", () => {
+    const inv = toInvoice(bare({ payee: { name: "Faktoria Kapital S.A.", iban: null } }), ctx);
+    expect(inv.payee?.name).toBe("Faktoria Kapital S.A.");
+  });
+
+  it("trims whitespace from extracted identifiers", () => {
+    const inv = toInvoice(bare({ invoice_number: "  NW-2026-08-1207  " }), ctx);
+    expect(inv.invoice_number).toBe("NW-2026-08-1207");
+  });
+});

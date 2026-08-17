@@ -1,0 +1,135 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 0; }
+  body { box-sizing: border-box; width: 794px; min-height: 1123px; margin: 0; padding: 56px 64px;
+         font: 13px/1.5 "Helvetica Neue", Arial, sans-serif; color: #111; background: #fff; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .brand { font-size: 19px; font-weight: 700; letter-spacing: -0.2px; }
+  .brand small { display: block; font-size: 10px; font-weight: 400; color: #555;
+                 letter-spacing: 1.4px; text-transform: uppercase; margin-top: 3px; }
+  .doc { text-align: right; }
+  .doc h1 { margin: 0; font-size: 25px; letter-spacing: 3px; text-transform: uppercase; }
+  table.meta { margin-top: 8px; font-size: 12px; border-collapse: collapse; margin-left: auto; }
+  table.meta td { padding: 1px 0 1px 14px; }
+  table.meta td:first-child { color: #666; text-align: right; }
+  hr { border: 0; border-top: 2px solid #111; margin: 22px 0 18px; }
+  .parties { display: flex; gap: 48px; }
+  .parties > div { flex: 1; }
+  .lbl { font-size: 9px; letter-spacing: 1.3px; text-transform: uppercase;
+         color: #777; margin-bottom: 5px; }
+  .parties strong { display: block; margin-bottom: 2px; }
+  .parties p { margin: 0; color: #333; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 26px; font-size: 12px; }
+  table.items th { text-align: left; border-bottom: 1.5px solid #111; padding: 6px 8px;
+                   font-size: 9px; letter-spacing: 1.1px; text-transform: uppercase; color: #555; }
+  table.items td { padding: 8px; border-bottom: 1px solid #e4e4e4; }
+  .r { text-align: right; white-space: nowrap; }
+  .totals { margin-top: 18px; margin-left: auto; width: 300px; font-size: 12px; }
+  .totals tr td { padding: 4px 0; }
+  .totals tr td:last-child { text-align: right; }
+  .totals tr.grand td { border-top: 2px solid #111; padding-top: 8px;
+                        font-weight: 700; font-size: 15px; }
+  .pay { margin-top: 34px; display: flex; gap: 40px; }
+  .pay > div { flex: 1; }
+  .assign { margin-top: 20px; border: 1px solid #111; padding: 11px 13px;
+            font-size: 11.5px; background: #f7f7f5; }
+  .assign b { text-transform: uppercase; letter-spacing: 0.6px; font-size: 10px; }
+  footer { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 9px;
+           font-size: 9.5px; color: #777; line-height: 1.6; }
+</style>
+
+<div class="top">
+  <div class="brand">
+    Nordwerk Antriebstechnik GmbH
+    <small>Präzisionsgetriebe seit 1974</small>
+  </div>
+  <div class="doc">
+    <h1>Rechnung</h1>
+    <table class="meta">
+      <tr><td>Rechnungsnr.</td><td><b>NW-2026-08-1207</b></td></tr>
+      <tr><td>Rechnungsdatum</td><td>06.08.2026</td></tr>
+      <tr><td>Fällig am</td><td>20.09.2026</td></tr>
+      <tr><td>Zahlungsziel</td><td>45 Tage</td></tr>
+      <tr><td>Bestellnr.</td><td>PO-DE-5521</td></tr>
+      <tr><td>USt-IdNr.</td><td>DE811234567</td></tr>
+    </table>
+  </div>
+</div>
+
+<hr>
+
+<div class="parties">
+  <div>
+    <div class="lbl">Lieferant</div>
+    <strong>Nordwerk Antriebstechnik GmbH</strong>
+    <p>Industriestraße 44<br>44227 Dortmund<br>Deutschland</p>
+    <p style="margin-top:6px">USt-IdNr. DE811234567</p>
+  </div>
+  <div>
+    <div class="lbl">Rechnungsempfänger</div>
+    <strong>Rheinstahl Werke AG</strong>
+    <p>Hafenallee 12<br>47119 Duisburg<br>Deutschland</p>
+    <p style="margin-top:6px">USt-IdNr. DE119876543</p>
+  </div>
+</div>
+
+<table class="items">
+  <thead>
+    <tr>
+      <th style="width:32px">Pos</th>
+      <th>Beschreibung</th>
+      <th class="r" style="width:56px">Menge</th>
+      <th class="r" style="width:52px">Einh.</th>
+      <th class="r" style="width:92px">Einzelpreis</th>
+      <th class="r" style="width:96px">Gesamt</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td><td>Planetengetriebe PG-240, Serienfertigung</td>
+      <td class="r">40</td><td class="r">Stk</td><td class="r">1.685,00</td><td class="r">67.400,00</td>
+    </tr>
+    <tr>
+      <td>2</td><td>Montagesatz MS-240 inkl. Dichtungen</td>
+      <td class="r">40</td><td class="r">Stk</td><td class="r">92,50</td><td class="r">3.700,00</td>
+    </tr>
+    <tr>
+      <td>3</td><td>Werksprüfzeugnis 3.1 nach EN 10204</td>
+      <td class="r">1</td><td class="r">Pau</td><td class="r">480,00</td><td class="r">480,00</td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="totals">
+  <tr><td>Zwischensumme</td><td>71.580,00 EUR</td></tr>
+  <tr><td>Umsatzsteuer 19 %</td><td>13.600,20 EUR</td></tr>
+  <tr><td>Frachtkosten</td><td>0,00 EUR</td></tr>
+  <tr class="grand"><td>Gesamtbetrag</td><td>85.180,20 EUR</td></tr>
+</table>
+
+<div class="pay">
+  <div>
+    <div class="lbl">Zahlungsbedingungen</div>
+    <p>Netto 45 Tage ohne Abzug.<br>Zahlung per Überweisung.</p>
+  </div>
+  <div>
+    <div class="lbl">Bankverbindung</div>
+    <p>Commerzbank Dortmund<br>
+       IBAN DE89 3704 0044 0532 0130 00<br>
+       BIC COBADEFFXXX</p>
+  </div>
+</div>
+
+<div class="assign">
+  <b>Abtretungsanzeige / Notice of assignment</b><br>
+  Diese Forderung wurde abgetreten. Zahlung ausschließlich an den Zahlungsempfänger:<br>
+  <b style="font-size:11.5px;letter-spacing:0">Faktoria Kapital S.A.</b>,
+  IBAN PL27 1140 2004 0000 3002 0135 5387 &mdash; mit befreiender Wirkung nur an diesen Empfänger.
+</div>
+
+<footer>
+  Nordwerk Antriebstechnik GmbH &middot; Industriestraße 44, 44227 Dortmund &middot;
+  Geschäftsführer: A. Brandhoff, M. Vogel &middot; Amtsgericht Dortmund HRB 24418 &middot;
+  USt-IdNr. DE811234567 &middot; nordwerk-antrieb.de
+</footer>
