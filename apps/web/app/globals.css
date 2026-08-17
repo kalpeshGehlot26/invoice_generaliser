@@ -1,9 +1,12 @@
 /* ============================================================================
    Invoice Generaliser — a decision instrument, not a dashboard.
 
-   Two faces:
-     display (Instrument Serif) — headings and the verdict
-     text    (Archivo)          — everything else
+   One face: Archivo, at three weights.
+
+   Hierarchy comes from size, weight and colour rather than from switching
+   typeface. Headings carry 600 and tighter tracking — a 400-weight sans at
+   heading size reads as body copy that happens to be large, which is the trap
+   when a display serif is removed.
 
    No monospace. Figures still align: tabular-nums gives every digit the same
    advance width, which is the part of a fixed grid that money columns actually
@@ -102,10 +105,10 @@ body::before {
 }
 
 h1, h2, h3, .display {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  line-height: 1.15;
+  font-family: var(--font-text), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -132,7 +135,7 @@ h1, h2, h3, .display {
   background: var(--ink-sunk);
 }
 
-.masthead h1 { font-size: 30px; }
+.masthead h1 { font-size: 25px; letter-spacing: -0.03em; }
 
 .masthead .sub {
   color: var(--bone-dim);
@@ -468,9 +471,11 @@ textarea.other::placeholder { color: var(--bone-faint); }
 }
 
 .verdict .score {
-  font-family: var(--font-display), Georgia, serif;
-  font-size: 76px;
-  line-height: 0.82;
+  font-family: var(--font-text), sans-serif;
+  font-weight: 600;
+  font-size: 68px;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -487,8 +492,10 @@ textarea.other::placeholder { color: var(--bone-faint); }
 }
 
 .verdict .call {
-  font-family: var(--font-display), Georgia, serif;
-  font-size: 40px;
+  font-family: var(--font-text), sans-serif;
+  font-weight: 600;
+  font-size: 34px;
+  letter-spacing: -0.025em;
   color: var(--accent);
 }
 
@@ -521,7 +528,7 @@ textarea.other::placeholder { color: var(--bone-faint); }
   gap: 12px;
 }
 
-.block-head h2 { font-size: 22px; }
+.block-head h2 { font-size: 19px; }
 
 .block-head .count {
   font-size: 13px;
@@ -677,7 +684,7 @@ pre.json {
   border-radius: var(--radius);
 }
 
-.empty .display { font-size: 26px; color: var(--bone); margin-bottom: 10px; }
+.empty .display { font-size: 21px; color: var(--bone); margin-bottom: 10px; }
 .empty p { margin: 0; max-width: 62ch; }
 
 .steps {

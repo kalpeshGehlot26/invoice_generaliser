@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import { Archivo, Instrument_Serif } from "next/font/google";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 
-// Two faces. Monospace is gone entirely: tabular-nums keeps figures aligned
-// without it, and a fixed pitch was hurting readability at small sizes.
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-  display: "swap",
-});
-
+// One face. Hierarchy comes from size, weight and colour rather than from
+// switching typeface, so headings carry 600 while body stays at 400.
 const text = Archivo({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -27,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${text.variable}`}>
+    <html lang="en" className={text.variable}>
       <body>
         <header className="masthead">
           <h1>Invoice Generaliser</h1>
