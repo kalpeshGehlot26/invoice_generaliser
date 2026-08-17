@@ -48,8 +48,21 @@
   # 136 MB each, which pushed the bundle past the 250 MB unzipped ceiling and
   # failed the deploy outright. 561 MB of .node files sit in this tree; exactly
   # 23 MB of them belong in the function.
+  #
+  # pdfjs-dist needs three things named too. pdf-to-img locates the package by
+  # doing `resolve("pdfjs-dist/package.json")` and then builds its cmaps and
+  # standard_fonts paths from that directory. Netlify's trace followed the
+  # `pdf.mjs` import and nothing else, shipping exactly one file out of the
+  # package — so the resolve threw at module load, the route module never
+  # imported, and EVERY request returned a 500, a GET included. The failure
+  # looked like a broken function rather than a missing asset.
   included_files = [
     "node_modules/canvas/build/Release/**",
+    "node_modules/pdfjs-dist/package.json",
+    "node_modules/pdfjs-dist/legacy/build/**",
+    # Rendered when a PDF omits embedded fonts, or uses a CJK encoding.
+    "node_modules/pdfjs-dist/standard_fonts/**",
+    "node_modules/pdfjs-dist/cmaps/**",
     "!node_modules/@next/swc-*/**",
     "!**/*.map",
   ]
