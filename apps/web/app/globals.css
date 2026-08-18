@@ -213,12 +213,48 @@ h1, h2, h3, .display {
   align-items: stretch;
 }
 
+/* Below the two-column breakpoint the panel is no longer a fixed-height
+   column, so its inner scroll region must be dismantled completely — not just
+   unpinned.
+
+   `.panel-scroll` keeps `overflow-y: auto` and `overscroll-behavior: contain`
+   from the desktop layout. Those make it a scroll container even when its
+   content fits, and `contain` explicitly forbids scroll chaining to the page.
+   On a phone the panel fills the screen, so nearly every touch lands inside
+   that container and the page refuses to move. One scroll region per screen. */
 @media (max-width: 980px) {
   .shell {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr), NOT 1fr. A bare `1fr` is minmax(auto, 1fr), so the track
+       never shrinks below its widest content — the raw-JSON block blew the page
+       out to 7,165px on a 390px screen. The old `overflow-x: clip` hid that,
+       which is why it read as "scrolling is broken" rather than as a layout
+       fault: the page really was eighteen screens wide. */
+    grid-template-columns: minmax(0, 1fr);
     padding: calc(var(--step) * 3);
   }
-  .panel { position: static !important; max-height: none !important; }
+
+  /* Belt and braces: no grid or flex child may be sized by its content. */
+  .shell > * { min-width: 0; }
+
+  /* 210px of a 390px screen is half the row, and the reason text it was sizing
+     for is hidden below 1180px anyway. */
+  .score-cell { width: auto; }
+
+  .panel {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .panel-scroll {
+    overflow: visible !important;
+    overscroll-behavior: auto !important;
+    flex: none !important;
+  }
+
+  /* A sticky header costs a fifth of a phone screen for no benefit when the
+     whole page is one column. */
+  .masthead { position: static; }
 }
 
 /* The panel is a fixed-height column: upload at the head, action at the foot,
@@ -256,6 +292,7 @@ h1, h2, h3, .display {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .panel-scroll > .panel-section:last-child { border-bottom: 0; }
@@ -716,6 +753,7 @@ textarea.other::placeholder { color: var(--bone-faint); }
 .note li { margin: 6px 0; }
 
 pre.json {
+  -webkit-overflow-scrolling: touch;
   white-space: pre;
   tab-size: 2;
   background: var(--ink-sunk);
@@ -926,14 +964,14 @@ pre.json {
 .val .rows-total { color: var(--navy-deep); font-weight: 500; }
 .val.nil { color: var(--text-3); font-style: italic; }
 
-/* Nothing in the results column may widen the page. Wide tables and code
-   scroll inside their own box; the body never scrolls sideways.
+/* Nothing in the results column may widen the page — enforced at the source,
+   on the values themselves, rather than by clipping the document.
 
-   `clip`, NOT `hidden`. overflow-x: hidden makes the body a scroll container,
-   and a scroll container between the viewport and a `position: sticky` element
-   breaks the stickiness — it silently un-pinned the header and the left panel.
-   overflow-x: clip contains the overflow without creating that container. */
-html, body { overflow-x: clip; }
+   There is deliberately NO overflow rule on html or body. `overflow-x: hidden`
+   there makes the body a scroll container and breaks `position: sticky`;
+   `overflow-x: clip` avoids that but is one of the most reliable ways to break
+   touch scrolling in mobile Safari. The scroll root is left completely alone,
+   and each wide thing contains itself instead. */
 .data { table-layout: auto; width: 100%; }
 .data td { overflow-wrap: anywhere; }
 
@@ -1076,4 +1114,92 @@ html, body { overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) {
   .scan-bar, .scan-line, .scan-page, .stages li, .working { animation: none; }
   .scan-bar { display: none; }
+}
+
+/* ------------------------------------------------------------ column heads
+   Named because every field now carries a number: without a heading a bare
+   "0 checked" beside a value reads as part of the value. */
+.data thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 12px 7px 0;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.data thead th.score-cell { text-align: right; padding-right: 0; }
+
+.req-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0 7px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ------------------------------------------------------------------ narrow
+   The line-item table's fixed money columns came to 286px, which overflowed a
+   390px screen by 16px once the row padding was counted. Shrunk rather than
+   given its own scroll box: a second scroll region on a phone is the thing
+   that broke scrolling here in the first place. */
+@media (max-width: 620px) {
+  .req-head, .data thead th { font-size: 10px; }
+
+  /* Five columns do not fit a phone. Shrinking them left the description about
+     50px wide, which with `overflow-wrap: anywhere` broke it to one character
+     per line — technically not overflowing, and completely unreadable. So the
+     row stacks instead: description on its own line, figures beneath it. */
+  .val .rows,
+  .val .rows tbody,
+  .val .rows tr,
+  .val .rows td {
+    display: block;
+    width: auto;
+  }
+
+  .val .rows tr {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .val .rows tr:last-child { border-bottom: 0; }
+  .val .rows td { border-bottom: 0; padding: 0; }
+  .val .rows td.rows-seq { display: none; }
+
+  .val .rows td.rows-desc {
+    font-size: 12.5px;
+    color: var(--text-2);
+    margin-bottom: 3px;
+  }
+
+  /* The figures read as one line: quantity, unit price, row total. */
+  .val .rows td.rows-num {
+    display: inline-block;
+    width: auto;
+    text-align: left;
+    font-size: 12px;
+    color: var(--text-3);
+  }
+
+  .val .rows td.rows-num + td.rows-num::before {
+    content: "×";
+    margin: 0 5px;
+    color: var(--rule);
+  }
+
+  .val .rows td.rows-num + td.rows-total::before {
+    content: "=";
+    margin: 0 5px;
+    color: var(--rule);
+  }
+
+  .val .rows td.rows-total { color: var(--navy-deep); font-weight: 600; }
 }

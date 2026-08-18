@@ -265,6 +265,13 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
   return (
     <>
       <table className="data">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Value</th>
+            <th className="score-cell">Risk score</th>
+          </tr>
+        </thead>
         <tbody>
           {rows.map(([label, value, path]) => (
             <tr key={label}>
@@ -287,6 +294,13 @@ function Canonical({ invoice, risk }: { invoice: Invoice; risk: Map<string, Fiel
             <span className="count">{invoice.line_items!.length} rows</span>
           </div>
           <table className="data">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Quantity &times; unit price</th>
+                <th className="score-cell">Risk score</th>
+              </tr>
+            </thead>
             <tbody>
               {invoice.line_items!.map((li, i) => (
                 <tr key={i}>
@@ -372,6 +386,10 @@ export default function Results({ data }: { data: ProcessResponse }) {
           <div className="block-head">
             <h2>Requested fields</h2>
             <span className="count">{requested.length} asked for</span>
+          </div>
+          <div className="req-head">
+            <span>Field</span>
+            <span>Risk score</span>
           </div>
           {requested.map((r) => (
             <div key={r.key} className={`req ${r.status}`}>
