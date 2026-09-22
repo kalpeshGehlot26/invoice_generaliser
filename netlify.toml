@@ -20,11 +20,13 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  # Keep the wire payload under Netlify's 6 MB cap with room for base64
-  # expansion. The app's own default is 25 MB, which a function can never
-  # receive here — better to refuse in our own code with a clear message than
-  # to have the platform drop the request.
-  INVOICE_MAX_UPLOAD_BYTES = "4000000"
+  # The largest file Netlify's 6 MB request cap can carry. Binary bodies are
+  # base64-encoded on the way in (6 MB x 3/4 = ~4.7 MB), less a little for the
+  # multipart framing and the field list. The app's own default is 25 MB, which
+  # a function can never receive here — better to refuse in our own code with
+  # a clear message than to have the platform drop the request. The browser
+  # reads the same value at build time and refuses before uploading.
+  INVOICE_MAX_UPLOAD_BYTES = "4500000"
   # Each page is rasterised and sent to the vision model. Twenty pages will not
   # finish inside 60 seconds at 1 GB, and the retained base64 data URLs are the
   # memory ceiling before the CPU one.

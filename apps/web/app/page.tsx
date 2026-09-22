@@ -23,6 +23,17 @@ const COMMON = [
   "po_number",
 ];
 
+/** Mirrors INVOICE_MAX_UPLOAD_BYTES on the server; see next.config.mjs. */
+const MAX_UPLOAD_BYTES = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_BYTES);
+
+const mb = (bytes: number) => `${(bytes / 1_000_000).toFixed(1)} MB`;
+
+const tooLargeMessage = (size?: number) =>
+  `${size ? `This file is ${mb(size)}. ` : "This file is too large. "}` +
+  `The maximum upload size is ${mb(MAX_UPLOAD_BYTES)}. Compress the PDF, ` +
+  "or export the scan or photo at a lower resolution (150 dpi is plenty), " +
+  "then try again.";
+
 const ALL_KEYS = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
 
 /** Groups open on first load; the rest collapse to keep the panel scannable. */
@@ -37,6 +48,19 @@ export default function Page() {
   const [result, setResult] = useState<ProcessResponse | null>(null);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /** Refuse an oversized file here rather than upload it only to be rejected. */
+  function choose(picked: File | null) {
+    if (picked && picked.size > MAX_UPLOAD_BYTES) {
+      setFile(null);
+      setResult(null);
+      setError(tooLargeMessage(picked.size));
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    setError(null);
+    setFile(picked);
+  }
 
   const toggle = (key: string) =>
     setTicked((prev) => {
@@ -62,6 +86,12 @@ export default function Page() {
 
     try {
       const response = await fetch("/api/process", { method: "POST", body });
+      // The platform may refuse an oversized body before our route runs, with a
+      // non-JSON response, so answer a 413 from the status alone.
+      if (response.status === 413) {
+        setError(tooLargeMessage(file.size));
+        return;
+      }
       const payload = await response.json();
       if (!response.ok) {
         setError(payload.error ?? "Something went wrong.");
@@ -85,7 +115,7 @@ export default function Page() {
             type="file"
             accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/*"
             hidden
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => choose(e.target.files?.[0] ?? null)}
           />
           <button
             type="button"
@@ -100,7 +130,7 @@ export default function Page() {
               e.preventDefault();
               setDragging(false);
               const dropped = e.dataTransfer.files?.[0];
-              if (dropped) setFile(dropped);
+              if (dropped) choose(dropped);
             }}
           >
             {file ? (
@@ -113,7 +143,7 @@ export default function Page() {
             ) : (
               <>
                 Drop an invoice
-                <span className="filemeta">PDF, PNG, JPEG, WebP or GIF &middot; scans and photos fine</span>
+                <span className="filemeta">PDF, PNG, JPEG, WebP or GIF &middot; up to {mb(MAX_UPLOAD_BYTES)}</span>
               </>
             )}
           </button>

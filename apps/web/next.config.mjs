@@ -37,6 +37,13 @@ const nextConfig = {
   // `canvas` is node-canvas, the native rasteriser pdf-to-img depends on.
   // It must stay external: bundling a native addon breaks its .node loading.
   serverExternalPackages: ["pdf-to-img", "canvas", "pdfjs-dist"],
+  // The upload cap, baked into the client bundle so the browser can refuse an
+  // oversized file before sending it. Same variable and default as the server.
+  env: {
+    NEXT_PUBLIC_MAX_UPLOAD_BYTES: String(
+      process.env.INVOICE_MAX_UPLOAD_BYTES ?? 25 * 1024 * 1024,
+    ),
+  },
   transpilePackages: ["@invoice/extract", "@ifg/control-engine"],
   webpack: (config) => {
     // The workspace packages are ESM TypeScript source using explicit `.js`
